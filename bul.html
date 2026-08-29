@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mind Puzzle Adventure - Digital Companion</title>
+<style>
+  :root{
+    --ink:#182234; --ink2:#212e46; --accent:#3d6fd8; --accent-light:#7ea2ec;
+    --blue:#3d6fd8; --green:#2f9e6e; --orange:#e08a3c; --purple:#8a4fc9;
+    --paper:#faf6e6; --paper2:#f0ead0; --text:#1e2430; --muted:#8a8578;
+    --shadow:0 18px 40px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--ink); color:var(--paper); font-family:'Poppins','Trebuchet MS',Arial,sans-serif; min-height:100vh; }
+  #app{max-width:900px; margin:0 auto; padding:0 16px 60px;}
+
+  .funhead{ position:relative; height:80px; overflow:hidden; margin-bottom:20px;
+    background:radial-gradient(ellipse at 50% 130%, #24365a 0%, var(--ink) 75%);
+    border-bottom:1px solid rgba(126,162,236,.3); display:flex; align-items:center; justify-content:center;
+  }
+  .confetti{ position:absolute; inset:0; overflow:hidden; }
+  .conf-piece{ position:absolute; top:-10px; width:7px; height:7px; border-radius:2px; animation:drop linear infinite; }
+  @keyframes drop{ to{ transform:translateY(100px) rotate(180deg); opacity:0; } }
+  .brand-text{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:23px; color:var(--accent-light); position:relative; z-index:1; }
+  .topbar-corner{ position:absolute; top:16px; display:flex; align-items:center; gap:10px; z-index:2; }
+  .topbar-corner.left{ left:16px; } .topbar-corner.right{ right:16px; }
+  .lang-toggle{ display:flex; border:1px solid var(--accent-light); border-radius:20px; overflow:hidden; }
+  .lang-toggle button{ background:transparent; border:none; color:var(--paper); padding:7px 13px; font-family:'Poppins'; font-weight:800; font-size:11px; cursor:pointer; }
+  .lang-toggle button.active{ background:var(--accent-light); color:#0d1420; }
+  .turn-pill{ font-family:'Poppins'; font-weight:700; font-size:12px; color:var(--paper); border:1px solid var(--accent-light); background:rgba(61,111,216,.25); padding:5px 12px; border-radius:20px; }
+
+  .card{ background:var(--paper); color:var(--text); border-radius:14px; padding:30px 28px 24px; box-shadow:var(--shadow); border:2px solid var(--accent); position:relative; animation:fadeUp .4s ease; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .eyebrow{ font-family:'Poppins'; font-weight:700; font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--orange); margin:0 0 10px; }
+  h1.t{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:clamp(24px,4.4vw,32px); color:#182234; margin:0 0 14px; }
+  h2.t{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:21px; color:#182234; margin:0 0 12px; }
+  .body p{ font-family:'Poppins',sans-serif; font-size:15.5px; line-height:1.65; color:var(--text); margin:0 0 12px; }
+  .btn{ background:var(--ink); color:var(--paper); border:1px solid var(--accent-light); border-radius:10px; padding:12px 18px; font-family:'Poppins'; font-weight:700; font-size:14px; cursor:pointer; transition:.15s; }
+  .btn:hover{ background:var(--accent); border-color:var(--accent-light); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.wide{ width:100%; }
+  .btn.ghost{ background:transparent; color:var(--ink); border:1px solid var(--ink); }
+  .choices{ display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+
+  .board{ display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin:16px 0; }
+  .cell{ position:relative; aspect-ratio:1; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Poppins'; font-weight:700; font-size:13px; border:2px solid; }
+  .cell.cat0{ background:#e3ecfb; border-color:var(--blue); color:var(--blue); }
+  .cell.cat1{ background:#e1f3ea; border-color:var(--green); color:var(--green); }
+  .cell.cat2{ background:#fbe9d8; border-color:var(--orange); color:#a05a1c; }
+  .cell.cat3{ background:#eee1f7; border-color:var(--purple); color:var(--purple); }
+  .cell .pawns{ position:absolute; bottom:2px; display:flex; gap:2px; flex-wrap:wrap; justify-content:center; }
+  .pawn-dot{ width:13px; height:13px; border-radius:50%; border:1.5px solid #fff; font-size:8px; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; }
+  .legend{ display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 4px; justify-content:center; }
+  .legend span{ font-family:'Poppins'; font-weight:700; font-size:10.5px; padding:4px 10px; border-radius:14px; color:#fff; }
+
+  .diebox{ text-align:center; margin:18px 0; }
+  .die{ width:70px; height:70px; margin:0 auto 10px; border-radius:16px; background:#fff; border:2px solid var(--ink); display:flex; align-items:center; justify-content:center; font-size:40px; }
+  .die.rolling{ animation:shake .5s ease; }
+  @keyframes shake{ 0%,100%{transform:rotate(0);} 25%{transform:rotate(-14deg);} 75%{transform:rotate(14deg);} }
+
+  .cardflip{ perspective:1000px; margin:18px 0; }
+  .cardflip-inner{ position:relative; width:100%; min-height:250px; transition:transform .5s; transform-style:preserve-3d; }
+  .cardflip.flipped .cardflip-inner{ transform:rotateY(180deg); }
+  .cf-face{ position:absolute; inset:0; backface-visibility:hidden; border-radius:14px; padding:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; border:2px solid; overflow-y:auto; }
+  .cf-front{ background:var(--ink2); color:var(--accent-light); font-family:'Baloo 2'; font-size:22px; cursor:pointer; border-color:var(--accent-light); }
+  .cf-back{ transform:rotateY(180deg); }
+  .cf-cat-label{ font-family:'Poppins'; font-weight:700; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .cf-prompt{ font-family:'Poppins'; font-weight:600; font-size:16px; line-height:1.5; color:var(--text); margin-bottom:10px; }
+  .cf-answer{ font-family:'Poppins'; font-style:italic; font-size:14px; color:var(--muted); }
+
+  .stamp{ display:inline-block; border:3px solid var(--orange); color:var(--orange); font-family:'Baloo 2',sans-serif; font-weight:800; letter-spacing:.03em; padding:9px 20px; transform:rotate(-4deg); border-radius:10px; margin:8px 0 18px; font-size:18px; }
+  .playergrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:10px; margin:16px 0; }
+  .playerchip{ border:2px solid; border-radius:12px; padding:12px 8px; text-align:center; font-family:'Poppins'; font-weight:700; }
+  .stepper{ display:flex; align-items:center; justify-content:center; gap:16px; margin:16px 0; }
+  .stepper button{ width:44px; height:44px; border-radius:50%; border:2px solid var(--ink); background:#fff; font-size:20px; font-weight:800; cursor:pointer; }
+  .stepper .num{ font-family:'Baloo 2'; font-weight:800; font-size:30px; min-width:44px; text-align:center; }
+  .language-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px; }
+  .language-choice{ min-height:110px; font-size:18px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; }
+  .language-choice small{ font-size:11px; opacity:.75; font-weight:600; }
+  .effect-panel{ margin-top:14px; padding:14px; border:1px solid #c9c1a9; border-radius:12px; background:#f4eed9; }
+  .effect-title{ font-weight:800; font-size:13px; color:var(--ink); margin-bottom:4px; }
+  .effect-help{ font-size:11px; line-height:1.45; color:#6e685b; margin-bottom:10px; }
+  .pawn-control{ display:grid; grid-template-columns:minmax(72px,1fr) auto; gap:8px; align-items:center; padding:8px 0; border-top:1px solid #ded6bd; }
+  .pawn-control:first-of-type{ border-top:none; }
+  .pawn-name{ font-size:12px; font-weight:800; }
+  .pawn-actions{ display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; }
+  .mini-btn{ min-width:34px; height:32px; border:1px solid #aaa18a; border-radius:8px; background:#fff; color:var(--ink); font-weight:800; cursor:pointer; }
+  .mini-btn:hover{ border-color:var(--accent); background:#edf2ff; }
+  .mini-btn.active{ background:#f8d9d9; border-color:#d64859; color:#8b1f2d; }
+  .swap-btn{ min-width:52px; font-size:10px; }
+  .skip-note{ display:block; margin-top:2px; color:#a22d3d; font-size:10px; font-weight:700; }
+  @media (max-width:520px){
+    .card{padding:22px 18px 20px;} .cell{font-size:11px;}
+    .brand-text{font-size:15px; max-width:120px; text-align:center; line-height:1.05;}
+    .topbar-corner.left{left:8px;} .topbar-corner.right{right:8px;}
+    .turn-pill{font-size:10px; padding:5px 8px;}
+    .lang-toggle button{padding:7px 9px; font-size:9.5px;}
+    .language-grid{grid-template-columns:1fr;}
+    .cardflip-inner{min-height:310px;}
+    .pawn-control{grid-template-columns:1fr;}
+    .pawn-actions{justify-content:flex-start;}
+  }
+</style>
+</head>
+<body>
+<div class="funhead">
+  <div class="confetti" id="confettiLayer"></div>
+  <div class="topbar-corner left"><div class="turn-pill" id="turnPill">·</div></div>
+  <div class="brand-text" id="brandLabel">Mind Puzzle Adventure</div>
+  <div class="topbar-corner right">
+    <div class="lang-toggle">
+      <button id="btnEN" class="active" onclick="setLang('en')">ENGLISH</button>
+      <button id="btnTR" onclick="setLang('tr')">TÜRKÇE</button>
+    </div>
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+// confetti bits
+const confetti = document.getElementById('confettiLayer');
+const confColors = ['#3d6fd8','#2f9e6e','#e08a3c','#8a4fc9'];
+for(let i=0;i<20;i++){
+  const p = document.createElement('div');
+  p.className='conf-piece';
+  p.style.left = (Math.random()*100)+'%';
+  p.style.background = confColors[Math.floor(Math.random()*4)];
+  p.style.animationDuration = (2+Math.random()*2)+'s';
+  p.style.animationDelay = (Math.random()*3)+'s';
+  confetti.appendChild(p);
+}
+
+const T = {
+  brand:{en:"Mind Puzzle Adventure", tr:"Akıl Bulmaca Macerası"},
+  begin:{en:"Start Playing", tr:"Oynamaya Başla"},
+  cont:{en:"Continue", tr:"Devam Et"},
+  howtoTitle:{en:"How to Play", tr:"Nasıl Oynanır"},
+  setupTitle:{en:"Choose Your Players", tr:"Oyuncularını Seç"},
+  playersLbl:{en:"Number of Players", tr:"Oyuncu Sayısı"},
+  startGame:{en:"Start the Game", tr:"Oyunu Başlat"},
+  turnOf:{en:"Turn", tr:"Sıra"},
+  rollDice:{en:"Roll the Die", tr:"Zar At"},
+  moveResult:{en:"You rolled", tr:"Attığın sayı"},
+  drawCard:{en:"Draw a Card", tr:"Kart Çek"},
+  tapReveal:{en:"Tap to reveal", tr:"Açmak için dokun"},
+  endTurn:{en:"End Turn", tr:"Turu Bitir"},
+  playAgain:{en:"New Game", tr:"Yeni Oyun"},
+  winTitle:{en:"We Have a Winner!", tr:"Bir Kazananımız Var!"},
+  wins:{en:"reaches the final space first!", tr:"son kareye ilk ulaşan oldu!"},
+  mind:{en:"Mind", tr:"Akıl"},
+  puzzle:{en:"Puzzle", tr:"Bulmaca"},
+  adventure:{en:"Adventure", tr:"Macera"},
+  surprise:{en:"Surprise", tr:"Sürpriz"},
+  pawnControls:{en:"Pawn controls", tr:"Piyon kontrolleri"},
+  controlHelp:{en:"Apply card bonuses, penalties, swaps, and skipped turns here.", tr:"Kart bonuslarını, cezaları, yer değişimlerini ve pas geçilecek turları buradan uygula."},
+  swap:{en:"Swap", tr:"Değiştir"},
+  skipNext:{en:"Skip", tr:"Pas"},
+  willSkip:{en:"Will skip the next turn", tr:"Bir sonraki turu pas geçecek"},
+};
+
+const CATS = ["mind","puzzle","adventure","surprise"];
+const CAT_COLOR = {mind:"var(--blue)", puzzle:"var(--green)", adventure:"var(--orange)", surprise:"var(--purple)"};
+
+const CARDS = {
+  mind:[
+    {en:{q:"It has a neck but no head — what is it?", a:"A bottle"}, tr:{q:"Boynu var başı yok, nedir?", a:"Şişe"}},
+    {en:{q:"It has teeth but never bites — what is it?", a:"A comb"}, tr:{q:"Dişleri var ama ısırmaz, nedir?", a:"Tarak"}},
+    {en:{q:"What walks on four legs in the morning, two at noon, and three in the evening?", a:"A human — crawling as a baby, walking as an adult, using a cane in old age"}, tr:{q:"Sabah dört, öğlen iki, akşam üç ayak üstünde yürüyen nedir?", a:"İnsan (bebeklik, yetişkinlik, yaşlılık-baston)"}},
+    {en:{q:"It has a memory but no brain — what is it?", a:"A computer"}, tr:{q:"Hafızası var ama beyni yok, nedir?", a:"Bilgisayar"}},
+    {en:{q:"A farm has chickens and cows — 10 heads in total, 26 legs in total. How many of each?", a:"7 chickens, 3 cows"}, tr:{q:"Bir çiftlikte tavuk ve inekler var; toplam 10 baş, 26 ayak var. Kaç tavuk kaç inek var?", a:"7 tavuk, 3 inek"}},
+    {en:{q:"Of three sisters, which one was born second — the eldest, the middle, or the youngest?", a:"The middle one"}, tr:{q:"Üç kız kardeşin ortancası kaçıncı doğmuştur?", a:"İkinci"}},
+    {en:{q:"The more you take, the more you leave behind — what is it?", a:"Footsteps"}, tr:{q:"Ne kadar çok alırsan arkanda o kadar çok bırakırsın, nedir?", a:"Adım"}},
+    {en:{q:"It flies through the sky with no wings, and can be tied to a string — what is it?", a:"A balloon"}, tr:{q:"Gökyüzünde kanatsız uçan, ipe bağlı olabilen nedir?", a:"Balon"}},
+    {en:{q:"It has no mouth yet speaks, no ears yet hears — what is it?", a:"An echo"}, tr:{q:"Ağzı yok konuşur, kulağı yok işitir, nedir?", a:"Yankı"}},
+    {en:{q:"If two days after today is Friday, what day was yesterday?", a:"Tuesday"}, tr:{q:"Bugünden iki gün sonrası Cuma ise, dün hangi gündü?", a:"Salı"}},
+    {en:{q:"A mother and father have 6 daughters, and every daughter has exactly one brother. How many people are in the family?", a:"9 — mother, father, 6 daughters, 1 brother"}, tr:{q:"Anne-babanın 6 kızı var, her kızın tek bir erkek kardeşi var. Ailede toplam kaç kişi var?", a:"9 kişi (anne, baba, 6 kız, 1 erkek kardeş)"}},
+    {en:{q:"The more you wash it, the dirtier it gets — what is it?", a:"Mop water (or dishwater)"}, tr:{q:"Ne kadar çok yıkarsan o kadar kirlenir, nedir?", a:"Bulaşık suyu / paspas suyu"}},
+    {en:{q:"I have cities but no houses, mountains but no trees, water but no fish. What am I?", a:"A map"}, tr:{q:"Şehirlerim var ama evim yok, dağlarım var ama ağacım yok, suyum var ama balığım yok, nedir?", a:"Harita"}},
+    {en:{q:"What has one eye but cannot see?", a:"A needle"}, tr:{q:"Bir gözü var ama göremez, nedir?", a:"İğne"}},
+    {en:{q:"What has a face and two hands but no arms or legs?", a:"A clock"}, tr:{q:"Yüzü ve iki eli var ama kolu bacağı yok, nedir?", a:"Saat"}},
+    {en:{q:"What can travel around the world while staying in one corner?", a:"A stamp"}, tr:{q:"Bir köşede kalarak dünyayı dolaşan nedir?", a:"Posta pulu"}},
+    {en:{q:"The maker sells it, the buyer never uses it, and the user never knows they're using it. What is it?", a:"A coffin"}, tr:{q:"Yapan satar, alan hiç kullanmaz, kullanan da kullandığını bilmez, nedir?", a:"Tabut"}},
+    {en:{q:"What gets wetter as it dries?", a:"A towel"}, tr:{q:"Kuruladıkça ıslanan nedir?", a:"Havlu"}},
+    {en:{q:"I'm tall when I'm young, short when I'm old — what am I?", a:"A candle"}, tr:{q:"Genç iken uzun, yaşlı iken kısayım, nedir?", a:"Mum"}},
+    {en:{q:"What has many keys but can't open a single lock?", a:"A piano"}, tr:{q:"Birçok tuşu var ama tek bir kilit açmaz, nedir?", a:"Piyano"}},
+    {en:{q:"Two fathers and two sons go fishing. Each catches one fish, but only three fish are caught in total. How?", a:"There are only 3 people: a grandfather, a father, and a son"}, tr:{q:"İki baba ve iki oğul balığa çıkar. Her biri bir balık tutar ama toplamda sadece 3 balık tutulur. Nasıl?", a:"Aslında sadece 3 kişi vardır: dede, baba ve oğul"}},
+    {en:{q:"If you have me, you want to share me. If you share me, you don't have me anymore. What am I?", a:"A secret"}, tr:{q:"Bir sırrın varsa paylaşmak istersin; paylaşırsan artık sır olmaktan çıkar. Nedir?", a:"Sır"}},
+    {en:{q:"You see a boat filled with people, yet there isn't a single person on board. How?", a:"Everyone on board is married — there's no single person"}, tr:{q:"İnsanlarla dolu bir tekne görürsün ama teknede tek bir bekâr bile yoktur. Nasıl?", a:"Teknedeki herkes evlidir."}},
+    {en:{q:"What month of the year has 28 days?", a:"All of them"}, tr:{q:"Yılın hangi ayı 28 gün çeker?", a:"Hepsi"}},
+    {en:{q:"A butcher is six feet tall. What does he weigh?", a:"Meat"}, tr:{q:"Bir kasap 1.80 boyundadır. Neyi tartar?", a:"Et"}},
+  ],
+  puzzle:[
+    {en:{q:"Use the letters in LISTEN to find another word — you have 1 minute.", a:"For example: SILENT"}, tr:{q:"K-A-L-E-M harflerini kullanarak başka bir kelime bulun (1 dk).", a:"Örnek: KELAM"}},
+    {en:{q:"2, 4, 8, 16, ? — what number comes next?", a:"32"}, tr:{q:"2, 4, 8, 16, ? — sıradaki sayı nedir?", a:"32"}},
+    {en:{q:"1, 1, 2, 3, 5, 8, ? — what number comes next?", a:"13"}, tr:{q:"1, 1, 2, 3, 5, 8, ? — sıradaki sayı nedir?", a:"13"}},
+    {en:{q:"Find a 5-letter word that reads the same forwards and backwards.", a:"For example: LEVEL"}, tr:{q:"Baştan sona ve sondan başa aynı okunan 5 harfli bir kelime bulun.", a:"Örnek: KABAK"}},
+    {en:{q:"Use the letters S-L-I-O-N to spell out an animal.", a:"LIONS"}, tr:{q:"N-A-L-S-A harflerini kullanarak bir hayvan ismi bulun.", a:"ASLAN"}},
+    {en:{q:"Which numbers, multiplied by themselves, equal themselves?", a:"0 and 1"}, tr:{q:"Hangi sayı kendisiyle çarpıldığında yine kendisi olur?", a:"0 ve 1"}},
+    {en:{q:"Find 3 different words that contain 'LAUGH' — you have 1 minute!", a:"For example: laughing, laughter, laughable"}, tr:{q:"İçinde 'GÜL' geçen 3 farklı kelime bulun — 1 dakikanız var!", a:"Örnek: gülmek, gülümsemek, güldürmek"}},
+    {en:{q:"A, C, E, G, ? — what letter comes next?", a:"I (the sequence skips one letter each time)"}, tr:{q:"A, C, E, G, ? — sıradaki harf nedir?", a:"I (harfler arası 1'er atlanıyor)"}},
+    {en:{q:"Alex isn't the doctor, Sam is the doctor, and Jordan isn't the teacher. Who does what job?", a:"Alex = teacher, Sam = doctor, Jordan = engineer"}, tr:{q:"Ali doktor değil, Ayşe doktor ve Veli öğretmen değil. Kim ne iş yapıyor?", a:"Ali = Öğretmen, Ayşe = Doktor, Veli = Mühendis"}},
+    {en:{q:"Think of a number. Double it. Add 10. Divide by 2. Subtract your original number. Did you land on 5?", a:"Yes — it's always 5!"}, tr:{q:"Bir sayı tutun, 2 ile çarpın, 10 ekleyin, 2'ye bölün, tuttuğunuz sayıyı çıkarın. Sonuç 5 mi çıktı?", a:"Evet, her zaman 5 çıkar!"}},
+    {en:{q:"10, 20, 19, 29, 28, ? — what number comes next?", a:"38 (add 10, then subtract 1, on repeat)"}, tr:{q:"10, 20, 19, 29, 28, ? — sıradaki sayı nedir?", a:"38 (10 ekle, 1 çıkar sırası)"}},
+    {en:{q:"In 60 seconds, who — or which team — can name the most words starting with 'S'?", a:"Open — whoever names the most wins"}, tr:{q:"60 saniyede 'K' harfiyle başlayan en çok kelimeyi kim/hangi takım sayar?", a:"Serbest — en çok sayan kazanır"}},
+    {en:{q:"Rearrange the letters of ASTRONOMER into a two-word phrase.", a:"MOON STARER"}, tr:{q:"KALEMLİK kelimesinin harflerini kullanarak 5 harfli başka bir kelime bulun (1 dk).", a:"Örnek: EMLAK"}},
+    {en:{q:"3, 6, 12, 24, ? — what number comes next?", a:"48"}, tr:{q:"3, 6, 12, 24, ? — sıradaki sayı nedir?", a:"48"}},
+    {en:{q:"A man looks at a photo and says: 'I have no brothers or sisters, but that man's father is my father's son.' Whose photo is it?", a:"His own son"}, tr:{q:"Bir adam bir fotoğrafa bakıp der ki: 'Kardeşim yok ama o adamın babası, benim babamın oğludur.' Fotoğraftaki kimdir?", a:"Kendi oğlu"}},
+    {en:{q:"How many times can you subtract 5 from 25?", a:"Only once — after that you're subtracting from 20"}, tr:{q:"25'ten kaç kere 5 çıkarabilirsin?", a:"Sadece bir kez — sonrasında 20'den çıkarırsın"}},
+    {en:{q:"What English word becomes shorter when you add two letters to it?", a:"'Short' — adding 'er' makes 'shorter'"}, tr:{q:"'KÜÇÜK' kelimesine küçültme eki getirildiğinde doğru yazım hangisidir?", a:"KÜÇÜCÜK"}},
+    {en:{q:"In 60 seconds, name as many countries starting with 'B' as you can.", a:"Open — whoever names the most wins"}, tr:{q:"60 saniyede 'T' ile başlayan en çok ülkeyi kim sayar?", a:"Serbest — en çok sayan kazanır"}},
+    {en:{q:"Three switches outside a room control three bulbs inside. You may enter the room only once. How do you find out which switch controls which bulb?", a:"Turn on switch 1, wait a bit, turn it off, turn on switch 2, then enter: the warm-but-off bulb matches switch 1, the lit bulb matches switch 2, the cold-off bulb matches switch 3"}, tr:{q:"Bir odanın dışında üç anahtar var, içeride üç ampulü kontrol ediyorlar. Odaya sadece bir kez girebilirsin. Hangi anahtarın hangi ampulü kontrol ettiğini nasıl anlarsın?", a:"1. anahtarı aç, biraz bekle, kapat; 2. anahtarı aç; içeri gir: sıcak ama sönük ampul 1. anahtar, yanan ampul 2. anahtar, soğuk sönük ampul 3. anahtardır"}},
+    {en:{q:"What has 13 hearts but no other organs?", a:"A deck of cards"}, tr:{q:"13 kalbi var ama başka organı yok, nedir?", a:"Bir deste iskambil kağıdı"}},
+    {en:{q:"I, II, III, IIII... something's off with the last one in real Roman numerals. What should it be?", a:"IV"}, tr:{q:"I, II, III, IIII... gerçek Roma rakamlarında sonuncusu yanlış. Doğrusu ne olmalı?", a:"IV"}},
+    {en:{q:"Complete the pattern: J, F, M, A, M, J, ?", a:"J (the months of the year)"}, tr:{q:"Diziyi tamamlayın: O, Ş, M, N, M, H, ?", a:"T (ayların ilk harfleri: Ocak, Şubat, Mart...)"}},
+    {en:{q:"You have two ropes; each burns unevenly but takes exactly 60 minutes. Using only these ropes and matches, measure exactly 45 minutes.", a:"Light rope A at both ends and rope B at one end at the same time. When A finishes (30 min), light the other end of B; it finishes 15 minutes later — 45 minutes total"}, tr:{q:"İki ipiniz var; her biri düzensiz yanar ama tam 60 dakikada biter. Sadece bu ipleri ve kibriti kullanarak tam 45 dakikayı ölçün.", a:"A ipini iki ucundan, B ipini bir ucundan aynı anda yakın. A bitince (30 dk) B'nin diğer ucunu da yakın; B 15 dakika sonra biter — toplam 45 dakika"}},
+    {en:{q:"Use the letters in ELECTION to find a 6-letter word.", a:"For example: NOTICE"}, tr:{q:"PORTAKAL kelimesinin harflerini kullanarak 4 harfli bir kelime bulun.", a:"Örnek: KART"}},
+    {en:{q:"Which weighs more: a pound of feathers or a pound of bricks?", a:"They weigh the same — both are a pound"}, tr:{q:"Bir kilo tüy mü ağırdır, bir kilo tuğla mı?", a:"İkisi de aynı ağırlıktadır — ikisi de bir kilo"}},
+  ],
+  adventure:[
+    {en:{q:"Close your eyes and describe the next player's face.", a:""}, tr:{q:"Bir sonraki oyuncuya gözlerini kapatıp yüzünü tarif et.", a:""}},
+    {en:{q:"Do a silly dance for 30 seconds.", a:""}, tr:{q:"30 saniye boyunca komik bir dans yap.", a:""}},
+    {en:{q:"Compliment the player on your right using only facial expressions.", a:""}, tr:{q:"Sağındaki oyuncuya sadece mimiklerle iltifat et.", a:""}},
+    {en:{q:"Lip-sync the chorus of a song — everyone else has to guess it.", a:""}, tr:{q:"Bir şarkının nakaratını ses çıkarmadan dudaklarınla canlandır; diğerleri tahmin etsin.", a:""}},
+    {en:{q:"Act out the last meal you ate — the group has to guess what it was.", a:""}, tr:{q:"En son yediğin yemeği pandomim ile anlat, grup tahmin etsin.", a:""}},
+    {en:{q:"In 10 seconds, do as many animal impressions as you can.", a:""}, tr:{q:"10 saniyede olabildiğince çok hayvan taklidi yap.", a:""}},
+    {en:{q:"Talk for 20 seconds without making eye contact with the next player.", a:""}, tr:{q:"Bir sonraki oyuncunun gözlerine bakmadan 20 saniye konuş.", a:""}},
+    {en:{q:"Invent a fun 'secret handshake' with the player on your left.", a:""}, tr:{q:"Solundaki oyuncuyla birlikte 2 hareketli bir 'selamlaşma' icat edin.", a:""}},
+    {en:{q:"Tell the group's funniest shared memory in 1 minute.", a:""}, tr:{q:"Grubun en komik anısını 1 dakikada anlat.", a:""}},
+    {en:{q:"Impersonate a celebrity — everyone else guesses who it is.", a:""}, tr:{q:"Bir ünlüyü taklit et, diğerleri kim olduğunu tahmin etsin.", a:""}},
+    {en:{q:"Say the alphabet backwards (Z to A) as fast as you can.", a:""}, tr:{q:"Alfabeyi sondan başa (Z'den A'ya) olabildiğince hızlı say.", a:""}},
+    {en:{q:"Say a tongue-twister 3 times fast — mess up and skip your next turn.", a:""}, tr:{q:"Bir tekerlemeyi 3 kez hızlı söyle; yanılırsan 1 tur pas geçersin.", a:""}},
+    {en:{q:"Speak in an accent of your choice until your next turn.", a:""}, tr:{q:"Bir sonraki turuna kadar seçtiğin bir aksanla konuş.", a:""}},
+    {en:{q:"Let another player style your hair for 1 minute.", a:""}, tr:{q:"Başka bir oyuncunun 1 dakika boyunca saçını şekillendirmesine izin ver.", a:""}},
+    {en:{q:"Strike your best superhero pose and hold it for 10 seconds.", a:""}, tr:{q:"En iyi süper kahraman pozunu ver ve 10 saniye tut.", a:""}},
+    {en:{q:"Sing 'Happy Birthday' as if you're a rock star.", a:""}, tr:{q:"'İyi ki Doğdun' şarkısını bir rock yıldızı gibi söyle.", a:""}},
+    {en:{q:"Trade shoes with the player across from you for 2 rounds.", a:""}, tr:{q:"Karşındaki oyuncuyla 2 tur boyunca ayakkabı değiştir.", a:""}},
+    {en:{q:"Try to make the group laugh without saying a single word.", a:""}, tr:{q:"Tek kelime etmeden grubu güldürmeye çalış.", a:""}},
+    {en:{q:"Do 10 jumping jacks while reciting the alphabet.", a:""}, tr:{q:"Alfabeyi sayarken 10 kez yıldız zıplaması yap.", a:""}},
+    {en:{q:"Draw a self-portrait using your non-dominant hand — the group guesses who it is.", a:""}, tr:{q:"Kullanmadığın elinle kendi portreni çiz — grup kimin olduğunu tahmin etsin.", a:""}},
+  ],
+  surprise:[
+    {en:{q:"Move forward 2 spaces!", a:""}, tr:{q:"2 kare ileri git!", a:""}},
+    {en:{q:"Skip your next turn.", a:""}, tr:{q:"1 tur pas geç.", a:""}},
+    {en:{q:"Swap places with any player you choose.", a:""}, tr:{q:"İstediğin bir oyuncuyla yer değiştir.", a:""}},
+    {en:{q:"Gift 3 spaces to the player closest to you on the board; choose if tied.", a:""}, tr:{q:"Tahtada sana en yakın oyuncuya 3 kare hediye et; eşitlik varsa birini seç.", a:""}},
+    {en:{q:"Draw one more card and apply that one too.", a:""}, tr:{q:"Bir kart daha çek ve onu da uygula.", a:""}},
+    {en:{q:"Move back 3 spaces.", a:""}, tr:{q:"3 kare geri git.", a:""}},
+    {en:{q:"Roll the die twice on your next turn.", a:""}, tr:{q:"Bir sonraki turunda zarı 2 kez at.", a:""}},
+    {en:{q:"Everyone must do an Adventure card of your choosing — all at the same time!", a:""}, tr:{q:"Herkes senin seçtiğin bir Macera kartını aynı anda yapsın!", a:""}},
+    {en:{q:"Everyone switches seats one spot to the left.", a:""}, tr:{q:"Herkes bir sola kayarak yer değiştirir.", a:""}},
+    {en:{q:"The player to your left picks your next card's category.", a:""}, tr:{q:"Solundaki oyuncu bir sonraki kartının kategorisini seçer.", a:""}},
+    {en:{q:"Freeze! Whoever moves first loses 2 spaces.", a:""}, tr:{q:"Dur! İlk hareket eden 2 kare geri gider.", a:""}},
+    {en:{q:"Trade your current position with the player in last place.", a:""}, tr:{q:"Son sıradaki oyuncuyla yerini değiştir.", a:""}},
+    {en:{q:"All players roll the die once — the highest roller moves forward 2 spaces.", a:""}, tr:{q:"Tüm oyuncular zar atar — en yüksek atan 2 kare ilerler.", a:""}},
+    {en:{q:"Each player's next Adventure card is discarded without doing the challenge.", a:""}, tr:{q:"Her oyuncunun sıradaki Macera kartı, görev yapılmadan atılır.", a:""}},
+    {en:{q:"You may move forward or backward 4 spaces — your choice.", a:""}, tr:{q:"4 kare ileri ya da geri gidebilirsin — seç.", a:""}},
+    {en:{q:"Everyone claps once — the last one to clap moves back 1 space.", a:""}, tr:{q:"Herkes bir kez el çırpar — en son çırpan 1 kare geri gider.", a:""}},
+  ],
+};
+
+const SPACE_CAT = [null,0,1,2,3,0,1, 3,2,1,0,3,2, 0,1,2,3,0,1, 3,2,1,0,3,2, 0,1,2,3,0,1];
+const ROWS = [[1,2,3,4,5,6],[12,11,10,9,8,7],[13,14,15,16,17,18],[24,23,22,21,20,19],[25,26,27,28,29,30]];
+const PAWN_COLORS = ["#3d6fd8","#2f9e6e","#e08a3c","#8a4fc9","#d64859","#168f9e"];
+
+let STATE = {
+  lang:"en", screen:"language", numPlayers:4, positions:[], skipTurns:[], current:0,
+  dieValue:null, drawnCat:null, cardFlipped:false, currentCard:null, decks:{}, winner:null
+};
+
+function L(obj){ return obj[STATE.lang]; }
+function setLang(l){
+  STATE.lang = l;
+  document.documentElement.lang = l;
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnTR').classList.toggle('active', l==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  render();
+}
+function go(id){ STATE.screen = id; window.scrollTo({top:0,behavior:'smooth'}); render(); }
+function resetGame(){ STATE = { lang:STATE.lang, screen:"language", numPlayers:4, positions:[], skipTurns:[], current:0, dieValue:null, drawnCat:null, cardFlipped:false, currentCard:null, decks:{}, winner:null }; render(); }
+function chooseLanguage(lang){ setLang(lang); go('cover'); }
+
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function initDecks(){ STATE.decks = {}; CATS.forEach(c=>{ STATE.decks[c] = shuffle(CARDS[c].map((_,i)=>i)); }); }
+function drawFromDeck(cat){
+  if(!STATE.decks[cat] || STATE.decks[cat].length===0){ STATE.decks[cat] = shuffle(CARDS[cat].map((_,i)=>i)); }
+  const idx = STATE.decks[cat].pop();
+  return CARDS[cat][idx];
+}
+
+function startGame(){
+  STATE.positions = new Array(STATE.numPlayers).fill(1);
+  STATE.skipTurns = new Array(STATE.numPlayers).fill(0);
+  STATE.current = 0;
+  initDecks();
+  go('play');
+}
+function setNumPlayers(n){ STATE.numPlayers = Math.max(4,Math.min(6,n)); render(); }
+
+function rollDie(){
+  if(STATE.dieValue !== null) return;
+  const el = document.getElementById('dieEl');
+  if(el) el.classList.add('rolling');
+  const val = 1 + Math.floor(Math.random()*6);
+  setTimeout(()=>{
+    STATE.dieValue = val;
+    const p = STATE.current;
+    let newPos = STATE.positions[p] + val;
+    if(newPos > 30) newPos = 30;
+    STATE.positions[p] = newPos;
+    if(newPos >= 30){
+      STATE.winner = p;
+      render();
+      return;
+    }
+    STATE.drawnCat = SPACE_CAT[newPos];
+    STATE.cardFlipped = false;
+    STATE.currentCard = null;
+    render();
+  }, 480);
+  render();
+}
+function drawCard(){
+  STATE.currentCard = drawFromDeck(CATS[STATE.drawnCat]);
+  render();
+}
+function flipCard(){ STATE.cardFlipped = true; render(); }
+function adjustPlayer(i, delta){
+  STATE.positions[i] = Math.max(1, Math.min(30, STATE.positions[i] + delta));
+  if(STATE.positions[i] >= 30) STATE.winner = i;
+  render();
+}
+function swapWith(i){
+  if(i === STATE.current) return;
+  [STATE.positions[STATE.current], STATE.positions[i]] = [STATE.positions[i], STATE.positions[STATE.current]];
+  render();
+}
+function toggleSkip(i){
+  STATE.skipTurns[i] = STATE.skipTurns[i] ? 0 : 1;
+  render();
+}
+function endTurn(){
+  STATE.dieValue = null; STATE.drawnCat = null; STATE.currentCard = null; STATE.cardFlipped = false;
+  let next = (STATE.current + 1) % STATE.numPlayers;
+  let found = false;
+  for(let checked=0; checked<STATE.numPlayers; checked++){
+    if(STATE.skipTurns[next] > 0){
+      STATE.skipTurns[next] -= 1;
+      next = (next + 1) % STATE.numPlayers;
+    } else {
+      found = true;
+      break;
+    }
+  }
+  STATE.current = found ? next : (STATE.current + 1) % STATE.numPlayers;
+  render();
+}
+
+const DICE_FACES = ["","⚀","⚁","⚂","⚃","⚄","⚅"];
+
+function renderCover(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'OFFLINE DIGITAL COMPANION':'ÇEVRİMDIŞI DİJİTAL OYUN'}</p>
+    <h1 class="t">${STATE.lang==='en'?'Mind Puzzle Adventure':'Akıl Bulmaca Macerası'}</h1>
+    <div class="body"><p>${STATE.lang==='en'?'A party game for 4–6 players. Follow the snaking path, solve riddles, and take on silly dares along the way. No installation or internet connection is required.':'4-6 kişilik bir parti oyunu. Yılan yolunu takip edin, bilmeceleri çözün ve yol boyunca komik görevleri tamamlayın. Kurulum veya internet bağlantısı gerekmez.'}</p></div>
+    <div class="choices"><button class="btn wide" onclick="go('howto')">${L(T.begin)}</button></div>
+  </div>`;
+}
+function renderLanguage(){
+  return `<div class="card">
+    <p class="eyebrow">CHOOSE YOUR LANGUAGE · DİLİNİ SEÇ</p>
+    <h1 class="t">Mind Puzzle Adventure</h1>
+    <div class="body"><p>Select English or Turkish to begin.<br>Başlamak için İngilizce veya Türkçe seçin.</p></div>
+    <div class="language-grid">
+      <button class="btn language-choice" onclick="chooseLanguage('en')">ENGLISH<small>Play in English</small></button>
+      <button class="btn language-choice" onclick="chooseLanguage('tr')">TÜRKÇE<small>Türkçe oyna</small></button>
+    </div>
+  </div>`;
+}
+function renderHowTo(){
+  return `<div class="card">
+    <p class="eyebrow">${L(T.howtoTitle)}</p>
+    <h2 class="t">${STATE.lang==='en'?'Before You Begin':'Başlamadan Önce'}</h2>
+    <div class="body">
+      ${STATE.lang==='en' ? `
+      <p>Each player takes a turn rolling the die and moving along the path. The space you land on tells you which card to draw — Mind, Puzzle, Adventure, or Surprise.</p>
+      <p>For a correct Mind/Puzzle answer, move 1 bonus space. Complete Adventure cards or skip your next turn. Apply Surprise cards immediately. Use the pawn controls below a revealed card for bonuses, penalties, swaps, and skipped turns.</p>
+      <p>Keep the answer line hidden from guessers. First to reach space 30 wins the game!</p>` : `
+      <p>Her oyuncu sırayla zar atıp yol üzerinde ilerler. Bastığın kare, hangi kartı çekeceğini gösterir — Akıl, Bulmaca, Macera ya da Sürpriz.</p>
+      <p>Doğru Akıl/Bulmaca cevabında 1 bonus kare ilerle. Macera görevini tamamla; yapmazsan sonraki turu pas geç. Sürpriz kartını hemen uygula. Bonus, ceza, yer değişimi ve pas işlemleri için açılan kartın altındaki piyon kontrollerini kullan.</p>
+      <p>Cevap satırını tahmin edenlerden gizli tut. 30 numaralı kareye ilk ulaşan oyunu kazanır!</p>`}
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('setup')">${L(T.cont)}</button></div>
+  </div>`;
+}
+function renderSetup(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'SETUP':'KURULUM'}</p>
+    <h2 class="t">${L(T.setupTitle)}</h2>
+    <p style="font-family:'Poppins'; font-size:13px; color:var(--muted); text-align:center;">${L(T.playersLbl)}</p>
+    <div class="stepper">
+      <button onclick="setNumPlayers(${STATE.numPlayers-1})">−</button>
+      <div class="num">${STATE.numPlayers}</div>
+      <button onclick="setNumPlayers(${STATE.numPlayers+1})">+</button>
+    </div>
+    <div class="playergrid">
+      ${Array.from({length:STATE.numPlayers}).map((_,i)=>`<div class="playerchip" style="border-color:${PAWN_COLORS[i]}; color:${PAWN_COLORS[i]};">${STATE.lang==='en'?'Player':'Oyuncu'} ${i+1}</div>`).join("")}
+    </div>
+    <div class="choices"><button class="btn wide" onclick="startGame()">${L(T.startGame)}</button></div>
+  </div>`;
+}
+function renderBoard(){
+  return `<div class="board">
+    ${ROWS.map(row=>row.map(n=>{
+      const cat = SPACE_CAT[n];
+      const pawnsHere = STATE.positions.map((pos,i)=>pos===n?i:-1).filter(i=>i>=0);
+      return `<div class="cell cat${cat}">${n}<div class="pawns">${pawnsHere.map(i=>`<span class="pawn-dot" style="background:${PAWN_COLORS[i]};">${i+1}</span>`).join("")}</div></div>`;
+    }).join("")).join("")}
+  </div>
+  <div class="legend">
+    <span style="background:var(--blue);">${L(T.mind)}</span>
+    <span style="background:var(--green);">${L(T.puzzle)}</span>
+    <span style="background:var(--orange);">${L(T.adventure)}</span>
+    <span style="background:var(--purple);">${L(T.surprise)}</span>
+  </div>`;
+}
+function renderPawnControls(){
+  if(!STATE.cardFlipped) return "";
+  return `<div class="effect-panel">
+    <div class="effect-title">${L(T.pawnControls)}</div>
+    <div class="effect-help">${L(T.controlHelp)}</div>
+    ${Array.from({length:STATE.numPlayers}).map((_,i)=>`<div class="pawn-control">
+      <div class="pawn-name" style="color:${PAWN_COLORS[i]};">${STATE.lang==='en'?'Player':'Oyuncu'} ${i+1} · ${STATE.positions[i]}
+        ${STATE.skipTurns[i]?`<span class="skip-note">${L(T.willSkip)}</span>`:""}
+      </div>
+      <div class="pawn-actions">
+        <button class="mini-btn" onclick="adjustPlayer(${i},-3)" aria-label="-3">−3</button>
+        <button class="mini-btn" onclick="adjustPlayer(${i},-1)" aria-label="-1">−1</button>
+        <button class="mini-btn" onclick="adjustPlayer(${i},1)" aria-label="+1">+1</button>
+        <button class="mini-btn" onclick="adjustPlayer(${i},3)" aria-label="+3">+3</button>
+        ${i!==STATE.current?`<button class="mini-btn swap-btn" onclick="swapWith(${i})">${L(T.swap)}</button>`:""}
+        <button class="mini-btn swap-btn ${STATE.skipTurns[i]?'active':''}" onclick="toggleSkip(${i})">${L(T.skipNext)}</button>
+      </div>
+    </div>`).join("")}
+  </div>`;
+}
+function renderPlay(){
+  if(STATE.winner !== null){
+    return `<div class="card">
+      <div class="stamp">${L(T.winTitle)}</div>
+      <h2 class="t" style="color:${PAWN_COLORS[STATE.winner]};">${STATE.lang==='en'?'Player':'Oyuncu'} ${STATE.winner+1}</h2>
+      <div class="body"><p>${L(T.wins)}</p></div>
+      ${renderBoard()}
+      <div class="choices"><button class="btn wide" onclick="resetGame()">↺ ${L(T.playAgain)}</button></div>
+    </div>`;
+  }
+  let cardSection = "";
+  if(STATE.drawnCat !== null){
+    const catName = L(T[CATS[STATE.drawnCat]]);
+    if(!STATE.currentCard){
+      cardSection = `<div class="choices"><button class="btn wide" onclick="drawCard()" style="background:${CAT_COLOR[CATS[STATE.drawnCat]]}; border-color:${CAT_COLOR[CATS[STATE.drawnCat]]}; color:#fff;">🃏 ${L(T.drawCard)} — ${catName}</button></div>`;
+    } else {
+      const c = STATE.currentCard[STATE.lang];
+      cardSection = `
+      <div class="cardflip ${STATE.cardFlipped?'flipped':''}">
+        <div class="cardflip-inner">
+          <div class="cf-face cf-front" onclick="flipCard()" style="border-color:${CAT_COLOR[CATS[STATE.drawnCat]]};">
+            ${catName}<br><span style="font-size:13px; font-family:'Poppins'; color:var(--muted); margin-top:8px;">${L(T.tapReveal)}</span>
+          </div>
+          <div class="cf-face cf-back" style="border-color:${CAT_COLOR[CATS[STATE.drawnCat]]};">
+            <div class="cf-cat-label" style="color:${CAT_COLOR[CATS[STATE.drawnCat]]};">${catName}</div>
+            <div class="cf-prompt">${c.q}</div>
+            ${c.a?`<div class="cf-answer">${c.a}</div>`:""}
+          </div>
+        </div>
+      </div>
+      ${renderPawnControls()}
+      <div class="choices"><button class="btn wide" onclick="endTurn()">${L(T.endTurn)}</button></div>`;
+    }
+  } else {
+    cardSection = `<div class="diebox">
+      <div class="die" id="dieEl">${STATE.dieValue?DICE_FACES[STATE.dieValue]:'?'}</div>
+      ${STATE.dieValue?`<p style="font-family:'Poppins'; font-weight:700;">${L(T.moveResult)}: ${STATE.dieValue}</p>`:`<button class="btn" onclick="rollDie()">🎲 ${L(T.rollDice)}</button>`}
+    </div>`;
+  }
+  return `<div class="card">
+    <p class="eyebrow">${L(T.turnOf)}</p>
+    <h2 class="t" style="color:${PAWN_COLORS[STATE.current]};">${STATE.lang==='en'?'Player':'Oyuncu'} ${STATE.current+1}</h2>
+    ${renderBoard()}
+    ${cardSection}
+  </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  let html = "";
+  if(STATE.screen==='language') html = renderLanguage();
+  else if(STATE.screen==='cover') html = renderCover();
+  else if(STATE.screen==='howto') html = renderHowTo();
+  else if(STATE.screen==='setup') html = renderSetup();
+  else if(STATE.screen==='play') html = renderPlay();
+  app.innerHTML = html;
+  const pill = document.getElementById('turnPill');
+  if(pill){
+    if(STATE.screen==='play' && STATE.winner===null) pill.textContent = (STATE.lang==='en'?'Player ':'Oyuncu ') + (STATE.current+1);
+    else pill.textContent = "·";
+  }
+}
+render();
+</script>
+</body>
+</html>
