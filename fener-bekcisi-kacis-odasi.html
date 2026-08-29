@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Lighthouse Keeper's Secret — Digital Escape Kit</title>
+<style>
+  :root{
+    --ink:#0e1b20;
+    --ink2:#152a31;
+    --paper:#eef1ea;
+    --paper2:#e2e7d9;
+    --teal:#1f5b63;
+    --teal-light:#3b7d74;
+    --brass:#c9a468;
+    --brass-dim:#a9814a;
+    --rust:#b5502e;
+    --text-dark:#182428;
+    --muted:#7c8a80;
+    --shadow: 0 18px 40px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:Arial,"Helvetica Neue",sans-serif;
+    min-height:100vh; min-height:100dvh;
+    -webkit-text-size-adjust:100%;
+  }
+  #app{max-width:920px; margin:0 auto; padding:0 16px calc(60px + env(safe-area-inset-bottom));}
+
+  /* signature: sweeping lighthouse beam header */
+  .beamhead{
+    position:relative; height:74px; overflow:hidden;
+    background: radial-gradient(ellipse at 50% 140%, #1a3a42 0%, var(--ink) 70%);
+    border-bottom:1px solid rgba(201,164,104,.3);
+    margin-bottom:20px;
+  }
+  .beamhead::before{
+    content:""; position:absolute; top:-20%; left:50%; width:14%; height:140%;
+    background:linear-gradient(90deg, rgba(255,235,180,0) 0%, rgba(255,235,180,.55) 50%, rgba(255,235,180,0) 100%);
+    transform-origin:top center;
+    animation: sweep 4.5s ease-in-out infinite;
+    mix-blend-mode:screen;
+  }
+  @keyframes sweep{
+    0%{ transform:translateX(-260%) rotate(0deg); }
+    50%{ transform:translateX(160%) rotate(0deg); }
+    100%{ transform:translateX(-260%) rotate(0deg); }
+  }
+  .beamhead .lamp{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    width:20px; height:20px; border-radius:50%;
+    background:radial-gradient(circle, #fff6df 0%, var(--brass) 60%, transparent 75%);
+    box-shadow:0 0 18px 6px rgba(255,235,180,.5);
+  }
+  .beamhead .brandrow{
+    position:absolute; bottom:10px; left:0; right:0; display:flex; align-items:center; justify-content:space-between;
+    padding:0 4px;
+  }
+  .brand-text{font-family:'Special Elite',monospace; font-size:11px; letter-spacing:.14em; color:var(--brass); text-transform:uppercase;}
+  .topbar-right{display:flex; align-items:center; gap:10px;}
+  .lang-toggle{ display:flex; border:1px solid var(--brass); border-radius:20px; overflow:hidden; }
+  .lang-toggle button{
+    background:transparent; border:none; color:var(--muted); padding:5px 13px;
+    font-family:'Inter',sans-serif; font-weight:700; font-size:11.5px; letter-spacing:.06em; cursor:pointer;
+  }
+  .lang-toggle button.active{background:var(--brass); color:#1c1408;}
+  .timerpill{
+    font-family:'Special Elite',monospace; font-size:13px; color:var(--paper);
+    border:1px solid var(--rust); background:rgba(181,80,46,.18);
+    padding:5px 12px; border-radius:20px; letter-spacing:.04em; min-width:78px; text-align:center;
+  }
+  .timerpill.warn{ background:rgba(181,80,46,.5); animation:pulse 1s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
+
+  .card{
+    background:var(--paper); color:var(--text-dark); border-radius:5px;
+    padding:32px 30px 26px; box-shadow:var(--shadow); position:relative;
+    border:1px solid var(--brass-dim); animation:fadeUp .45s ease;
+  }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .eyebrow{ font-family:'Special Elite',monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--teal); margin:0 0 10px; }
+  h1.scene-title{ font-family:'Playfair Display',serif; font-weight:700; font-style:italic; font-size:clamp(22px,4vw,30px); line-height:1.15; margin:0 0 16px; color:var(--text-dark); }
+  h2.scene-title{ font-family:'Playfair Display',serif; font-weight:700; font-style:italic; font-size:20px; margin:0 0 12px; color:var(--text-dark); }
+  .scene-body p{ font-family:'Special Elite',monospace; font-size:15px; line-height:1.72; color:#2b241a; margin:0 0 14px; }
+  .roomtag{
+    display:inline-block; font-family:'Inter',sans-serif; font-weight:700; font-size:10.5px; letter-spacing:.1em;
+    color:#eef1ea; background:var(--teal); padding:4px 12px; border-radius:3px; margin-bottom:10px;
+  }
+  .puzzlebox{ border:1.6px solid var(--teal); border-radius:5px; padding:16px 18px; margin:16px 0; background:var(--paper2); }
+  .puzzlebox .lbl{ font-family:'Inter',sans-serif; font-weight:700; font-size:10.5px; color:var(--rust); text-transform:uppercase; letter-spacing:.07em; margin-bottom:8px; }
+  .cipherline{ font-family:'Special Elite',monospace; font-size:15px; letter-spacing:.1em; background:#fff; border:1px dashed var(--brass-dim); padding:10px 12px; text-align:center; margin:10px 0; }
+  .refline{ font-family:'Special Elite',monospace; font-size:11.5px; color:var(--muted); text-align:center; margin-top:6px; }
+  .answer-row{ display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .answer-row input{
+    width:52px; height:52px; text-align:center; font-family:'Playfair Display',serif; font-weight:700; font-size:20px;
+    border:2px solid var(--text-dark); border-radius:5px; background:#fff; color:var(--text-dark);
+  }
+  .btn{
+    background:var(--ink2); color:var(--paper); border:1px solid var(--brass); border-radius:4px;
+    padding:11px 18px; font-family:'Inter',sans-serif; font-weight:700; font-size:13.5px; cursor:pointer; transition:.15s;
+  }
+  .btn:hover{ background:var(--teal); border-color:var(--teal-light); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.wide{ width:100%; text-align:center; }
+  .btn.ghost{ background:transparent; color:var(--teal); border:1px solid var(--teal); }
+  .feedback{ font-family:'Inter',sans-serif; font-weight:700; font-size:13px; margin-top:10px; min-height:18px; }
+  .feedback.good{ color:#1f6b3a; }
+  .feedback.bad{ color:var(--rust); }
+  .hint-toggle{ margin-top:14px; }
+  .hint-body{
+    margin-top:10px; border:1.4px dashed var(--rust); border-radius:4px; padding:12px 14px;
+    background:#f4e9dd; font-family:'Inter',sans-serif; font-size:12.5px; color:#5a4530; display:none;
+  }
+  .hint-body.open{ display:block; }
+  .map-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:18px 0 8px; }
+  .room-card{
+    background:var(--ink2); border:1px solid var(--brass); border-radius:5px; padding:16px 14px;
+    text-align:center; cursor:pointer; transition:.15s; color:var(--paper); position:relative;
+  }
+  .room-card:hover{ background:var(--teal); border-color:var(--teal-light); }
+  .room-card.solved{ opacity:.6; }
+  .room-card .num{ font-family:'Playfair Display',serif; font-weight:700; font-size:24px; color:var(--brass-light,var(--brass)); }
+  .room-card .name{ font-family:'Inter',sans-serif; font-weight:700; font-size:12.5px; margin-top:4px; }
+  .room-card .check{ position:absolute; top:8px; right:10px; color:var(--brass); font-size:14px; }
+  .dials{ display:flex; gap:14px; justify-content:center; margin:22px 0; }
+  .dial{ width:64px; height:64px; border:3px solid var(--text-dark); border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-weight:700; font-size:24px; background:#fff; color:var(--text-dark); }
+  .dial.empty{ color:#bbb; }
+  .choices{ display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+  .stamp{
+    display:inline-block; border:3px solid var(--rust); color:var(--rust);
+    font-family:'Playfair Display',serif; font-weight:700; font-style:italic; text-transform:uppercase;
+    letter-spacing:.06em; padding:8px 18px; transform:rotate(-5deg); border-radius:4px; margin:8px 0 18px; font-size:15px;
+  }
+  .banner{
+    background:rgba(181,80,46,.15); border:1px solid var(--rust); color:#7a2e18;
+    font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; padding:10px 14px; border-radius:4px; margin-bottom:16px;
+  }
+  .language-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:18px;}
+  .language-choice{min-height:96px; font-size:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;}
+  .language-choice small{font-size:11px; opacity:.76; font-weight:400;}
+  .legal-note{margin-top:16px; text-align:center; font-size:10.5px; letter-spacing:.06em; color:var(--muted); font-weight:700;}
+  @media (max-width:520px){
+    .beamhead{height:88px;}
+    .beamhead .brandrow{align-items:flex-end; gap:8px;}
+    .brand-text{max-width:42%; font-size:9px; line-height:1.25;}
+    .topbar-right{gap:6px;}
+    .lang-toggle button{padding:7px 10px;}
+    .timerpill{min-width:68px; padding:6px 8px; font-size:12px;}
+    .card{padding:22px 16px 20px; overflow:hidden;}
+    .map-grid,.language-grid{grid-template-columns:1fr;}
+    .dials{gap:7px;}
+    .dial{width:52px; height:56px; font-size:21px;}
+    .answer-row{align-items:stretch;}
+    .answer-row input{width:58px; height:48px;}
+    .answer-row .btn{flex:1; min-height:48px;}
+    .cipherline{font-size:13px; letter-spacing:.05em; overflow-wrap:anywhere;}
+    .refline{overflow-wrap:anywhere;}
+  }
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;scroll-behavior:auto!important;}}
+  .card::before{
+    content:""; position:absolute; top:50%; left:50%; width:340px; height:340px;
+    transform:translate(-50%,-50%); border-radius:50%; border:3px solid #1f5b63;
+    opacity:.05; z-index:0; pointer-events:none;
+  }
+  .card::after{
+    content:""; position:absolute; top:50%; left:50%; width:260px; height:260px;
+    transform:translate(-50%,-50%); border-radius:50%; border:1px solid #1f5b63;
+    opacity:.05; z-index:0; pointer-events:none;
+  }
+  .card > *{ position:relative; z-index:1; }
+</style>
+</head>
+<body>
+<div class="beamhead">
+  <div class="lamp"></div>
+  <div class="brandrow" style="max-width:920px; margin:0 auto; width:100%; left:50%; transform:translateX(-50%); position:absolute; padding:0 16px;">
+    <div class="brand-text" id="brandLabel">Blackrock Lighthouse</div>
+    <div class="topbar-right">
+      <div class="timerpill" id="timerPill">60:00</div>
+      <div class="lang-toggle">
+        <button id="btnEN" class="active" onclick="setLang('en')">EN</button>
+        <button id="btnTR" onclick="setLang('tr')">TR</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+/* ================= CONTENT ================= */
+const T = {
+  brand:{en:"Blackrock Lighthouse", tr:"Karataş Feneri"},
+  fileOpen:{en:"Begin the Escape", tr:"Kaçışa Başla"},
+  cont:{en:"Continue", tr:"Devam Et"},
+  howToPlay:{en:"How to Play", tr:"Nasıl Oynanır"},
+  toMap:{en:"Start the Climb", tr:"Tırmanışa Başla"},
+  mapTitle:{en:"Four Rooms, One Way Up", tr:"Dört Oda, Tek Çıkış"},
+  backMap:{en:"◂ Back to the Tower", tr:"◂ Kuleye Dön"},
+  toSignal:{en:"Go to the Signal Box", tr:"Sinyal Kutusuna Git"},
+  checkBtn:{en:"Check", tr:"Kontrol Et"},
+  correct:{en:"Correct! Digit locked in.", tr:"Doğru! Rakam kilitlendi."},
+  wrong:{en:"Not quite — look again.", tr:"Tam değil — tekrar bak."},
+  showHint:{en:"🔍 Show Hint", tr:"🔍 İpucunu Göster"},
+  hideHint:{en:"Hide Hint", tr:"İpucunu Gizle"},
+  turnDials:{en:"Turn the Dials", tr:"Kadranları Çevir"},
+  needAll:{en:"Solve all four rooms first.", tr:"Önce dört odayı da çözün."},
+  playAgain:{en:"Reopen the File", tr:"Dosyayı Yeniden Aç"},
+  timeUp:{en:"⚠ The storm is closing in — time's up.", tr:"⚠ Fırtına yaklaşıyor — süre doldu."},
+  seeEnding:{en:"See what happens", tr:"Ne olduğunu gör"},
+  players:{en:"Players: 4–6 · Time: 60 minutes", tr:"Oyuncu: 4–6 · Süre: 60 dakika"},
+};
+
+const ROOM_META = [
+  {key:"r1", icon:"🗝", name:{en:"Keeper's Quarters", tr:"Bekçinin Odası"}},
+  {key:"r2", icon:"📦", name:{en:"Storage Closet", tr:"Depo"}},
+  {key:"r3", icon:"🌀", name:{en:"The Spiral Stair", tr:"Sarmal Merdiven"}},
+  {key:"r4", icon:"💡", name:{en:"The Lamp Room", tr:"Fener Odası"}},
+];
+
+const ROOMS = {
+  r1:{
+    digit:"3",
+    title:{en:"The Keeper's Wheel", tr:"Bekçinin Çarkı"},
+    flavor:{
+      en:["A logbook lies open on the desk, its final entry pressed so hard into the paper it nearly tore through. Beside it sits a small brass wheel, etched with circling gulls, its edge worn smooth by a thumb that turned it a thousand times."],
+      tr:["Masanın üzerinde açık bir kayıt defteri duruyor; son kayıt, kâğıdı neredeyse delecek kadar sert bastırılmış. Yanında, üzerine dönen martılar kazınmış küçük bir pirinç çark var. Kenarı binlerce kez çevrilmekten pürüzsüzleşmiş."]
+    },
+    puzzleLbl:{en:"Puzzle — The Pressed Page", tr:"Bilmece — Bastırılmış Sayfa"},
+    puzzleText:{
+      en:"Every letter in the keeper's message has been turned forward around the wheel. Count the gulls above the door to know how far to turn each letter back.",
+      tr:"Bekçinin mesajındaki her harf çark üzerinde ileri doğru çevrilmiş. Kapının üstündeki martıları sayın — her harfi kaç adım geri çevireceğinizi gösterir."
+    },
+    gulls:"🐦 🐦 🐦",
+    cipher:{en:"EHZDUH WKH WKLUG ZDYH", tr:"ZFZPEZ GÇOIÇGÇP UÇNKP"},
+    ref:{en:"A–B–C–D–E–F–G–H–I–J–K–L–M–N–O–P–Q–R–S–T–U–V–W–X–Y–Z", tr:"A–B–C–Ç–D–E–F–G–Ğ–H–I–İ–J–K–L–M–N–O–Ö–P–R–S–Ş–T–U–Ü–V–Y–Z"},
+    afterText:{en:"The decoded message hides a number, spelled out in words. That number is your first digit.", tr:"Çözülen mesaj, yazıyla yazılmış bir sayı saklıyor. O sayı ilk rakamınız."},
+    hint:{en:"Count the gulls above the door. That's how many steps back each letter must travel. Shift every letter of the cipher backward by that many places in the alphabet. Decoded: \"BEWARE THE THIRD WAVE.\"", tr:"Kapının üstündeki martıları sayın. Bu, her harfin kaç adım geri gideceğidir. Şifredeki her harfi alfabede o kadar adım geriye kaydırın. Çözülen ifade: \"ÜÇÜNCÜ DALGADAN SAKIN.\""}
+  },
+  r2:{
+    digit:"4",
+    title:{en:"The Lamp's Pulse", tr:"Fenerin Nabzı"},
+    flavor:{
+      en:["Coils of rope and spare glass share the shelves with a wiring diagram for the great signal lamp. Tucked behind it, a curled strip of paper, tapped out long ago in a steady, patient hand: \"the number the lamp remembers.\""],
+      tr:["Halat yumakları ve yedek camlar, büyük sinyal fenerinin kablo şemasıyla aynı rafı paylaşıyor. Şemanın arkasına sıkıştırılmış kıvrık bir kâğıt şeridi var; üzerine uzun zaman önce sabit ve sabırlı bir elle şu mesaj vurulmuş: \"Fenerin hatırladığı sayı.\""]
+    },
+    puzzleLbl:{en:"Puzzle — Morse Signal", tr:"Bilmece — Mors Sinyali"},
+    puzzleText:{en:"Decode the four signals into a single word — a number, spelled out.", tr:"Dört sinyali tek bir kelimeye çözün — yazıyla yazılmış bir sayı."},
+    ref:{en:"F ··−·   O −−−   U ··−   R ·−·", tr:"D −··   Ö −−−·   R ·−·   T −"},
+    cipher:{en:"··−·   −−−   ··−   ·−·", tr:"−··   −−−·   ·−·   −"},
+    afterText:{en:"That number is your second digit.", tr:"O sayı ikinci rakamınız."},
+    hint:{en:"Dot is short, dash is long. Each group is one letter. Four letters spell one small number — one that rhymes with \"door.\" (FOUR)", tr:"Nokta kısa, çizgi uzundur. Her grup bir harftir. Dört harf tek bir sayı yazar — \"dört\" kelimesiyle aynı sayıyı. (DÖRT)"}
+  },
+  r3:{
+    digit:"9",
+    title:{en:"The Riddle in the Rail", tr:"Korkuluktaki Bilmece"},
+    flavor:{
+      en:["Your hand finds it before your eyes do — words worn into the handrail by decades of climbing fingers, deepest where a hand would rest to catch its breath."],
+      tr:["Eliniz onu gözlerinizden önce buluyor: On yıllar boyunca merdiveni tırmanan parmakların korkuluğa oyduğu sözcükler, bir elin soluklanmak için dayandığı yerde en derin hâlini almış."]
+    },
+    puzzleLbl:{en:"Puzzle — Carved in Wood", tr:"Bilmece — Ahşaba Oyulmuş"},
+    puzzleText:{
+      en:"\"Count the lamps that crown the tower. Take away the years it slept. Add the keepers who came before me. What number do you keep?\"",
+      tr:"\"Kuleyi taçlandıran fenerleri say. Onun boş uyuduğu yılları çıkar. Benden önceki bekçileri ekle. Elinde kalan sayı nedir?\""
+    },
+    ref:{en:"Lamps atop the tower: 12 · Years it stood empty: 8 · Keepers before Elias: 5", tr:"Kulenin tepesindeki fenerler: 12 · Boş kaldığı yıllar: 8 · Elias'tan önceki bekçiler: 5"},
+    afterText:{en:"Solve the riddle's arithmetic. The answer is your third digit.", tr:"Bilmecenin aritmetiğini çözün. Cevap üçüncü rakamınız."},
+    hint:{en:"Start with 12. Subtract 8. Then add 5. (12 − 8 + 5 = 9)", tr:"12'den başlayın. 8 çıkarın. Sonra 5 ekleyin. (12 − 8 + 5 = 9)"}
+  },
+  r4:{
+    digit:"2",
+    title:{en:"The Silent Alphabet", tr:"Sessiz Alfabe"},
+    flavor:{
+      en:["At the top of the tower, the great lens still turns slow circles across the glass. Scratched faintly into a corner pane sits a row of small geometric shapes — a private code, the keeper once said, taught to him by his father, a stonemason."],
+      tr:["Kulenin tepesinde, büyük mercek hâlâ camın üzerinde yavaş daireler çiziyor. Bir köşe camına kazınmış küçük geometrik şekillerden oluşan bir sıra var — bekçinin bir zamanlar söylediğine göre, babası bir taş ustasının ona öğrettiği özel bir şifre."]
+    },
+    puzzleLbl:{en:"Puzzle — Pigpen Cipher", tr:"Bilmece — Kafes Şifresi"},
+    puzzleText:{
+      en:"Grid #: A B C / D E F / G H I &nbsp;·&nbsp; Grid X: J K L / M N O / P Q R &nbsp;·&nbsp; Dotted #: S T U / V W X / Y Z",
+      tr:"# Izgarası: A B C / Ç D E / F G Ğ &nbsp;·&nbsp; X Izgarası: H I İ / J K L / M N O &nbsp;·&nbsp; Noktalı #: Ö P R / S Ş T / U Ü V"
+    },
+    ref:{
+      en:"The keeper left three shapes: dotted-grid row 1 col 2 · dotted-grid row 2 col 2 · grid X row 2 col 3.",
+      tr:"Bekçi üç şekil bıraktı: X ızgarası satır 1 sütun 3 · X ızgarası satır 2 sütun 2 · X ızgarası satır 1 sütun 3 (tekrar)."
+    },
+    afterText:{en:"Decode the shapes into a word — a number, spelled out. That number is your fourth digit.", tr:"Şekilleri bir kelimeye çözün — yazıyla yazılmış bir sayı. O sayı dördüncü rakamınız."},
+    hint:{en:"Dotted grid r1c2 = T. Dotted grid r2c2 = W. Grid X r2c3 = O. The word rhymes with \"shoe.\" (TWO)", tr:"X ızgarası 1. satır 3. sütun = İ. X ızgarası 2. satır 2. sütun = K. İlk şekil tekrarlandığı için son harf yine İ'dir. (İKİ)"}
+  }
+};
+
+/* ================= STATE ================= */
+const STORAGE_KEY = "lighthouse_escape_v2";
+let STATE = {
+  lang:"en", screen:"language",
+  digits:{r1:null, r2:null, r3:null, r4:null},
+  hints:{r1:false, r2:false, r3:false, r4:false},
+  timerStarted:false, secondsLeft:60*60, timerEnd:null, timerId:null, timeIsUp:false
+};
+
+function saveState(){
+  const safe = {...STATE, timerId:null};
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(safe)); }catch(_e){}
+}
+
+function loadState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+    if(!saved || !saved.digits || !saved.hints) return;
+    STATE = {...STATE, ...saved, timerId:null};
+    if(STATE.timerStarted && STATE.timerEnd){
+      STATE.secondsLeft = Math.max(0, Math.ceil((STATE.timerEnd-Date.now())/1000));
+      STATE.timeIsUp = STATE.secondsLeft<=0;
+    }
+  }catch(_e){}
+}
+
+function L(obj){ return obj[STATE.lang]; }
+
+function setLang(l){
+  STATE.lang = l;
+  if(STATE.screen === 'language') STATE.screen = 'cover';
+  document.documentElement.lang = l;
+  document.title = l==='en' ? "The Lighthouse Keeper's Secret — Digital Escape Kit" : "Fener Bekçisinin Sırrı — Dijital Kaçış Oyunu";
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnTR').classList.toggle('active', l==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  saveState();
+  render();
+}
+
+function go(screen){ STATE.screen = screen; saveState(); window.scrollTo({top:0,behavior:'smooth'}); render(); }
+
+function startTimerOnce(){
+  if(STATE.timerStarted) return;
+  STATE.timerStarted = true;
+  STATE.timerEnd = Date.now() + STATE.secondsLeft*1000;
+  saveState();
+  STATE.timerId = setInterval(()=>{
+    STATE.secondsLeft = Math.max(0, Math.ceil((STATE.timerEnd-Date.now())/1000));
+    if(STATE.secondsLeft <= 0){
+      STATE.timeIsUp = true;
+      clearInterval(STATE.timerId);
+    }
+    saveState();
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function updateTimerDisplay(){
+  const m = Math.floor(STATE.secondsLeft/60).toString().padStart(2,'0');
+  const s = (STATE.secondsLeft%60).toString().padStart(2,'0');
+  const pill = document.getElementById('timerPill');
+  if(pill){
+    pill.textContent = m+":"+s;
+    pill.classList.toggle('warn', STATE.secondsLeft<=60 || STATE.timeIsUp);
+  }
+}
+
+function checkDigit(roomKey){
+  const input = document.getElementById('input_'+roomKey);
+  const fb = document.getElementById('fb_'+roomKey);
+  const val = (input.value||"").trim();
+  const correct = ROOMS[roomKey].digit;
+  if(val === correct){
+    STATE.digits[roomKey] = val;
+    fb.textContent = L(T.correct);
+    fb.className = "feedback good";
+    input.disabled = true;
+  } else {
+    fb.textContent = L(T.wrong);
+    fb.className = "feedback bad";
+  }
+  saveState();
+}
+
+function toggleHint(roomKey){
+  STATE.hints[roomKey] = !STATE.hints[roomKey];
+  const body = document.getElementById('hint_'+roomKey);
+  const btn = document.getElementById('hintbtn_'+roomKey);
+  body.classList.toggle('open', STATE.hints[roomKey]);
+  btn.textContent = STATE.hints[roomKey] ? L(T.hideHint) : L(T.showHint);
+  saveState();
+}
+
+function resetGame(){
+  if(STATE.timerId) clearInterval(STATE.timerId);
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(_e){}
+  STATE = {lang:STATE.lang, screen:"cover", digits:{r1:null,r2:null,r3:null,r4:null}, hints:{r1:false,r2:false,r3:false,r4:false}, timerStarted:false, secondsLeft:3600, timerEnd:null, timerId:null, timeIsUp:false};
+  updateTimerDisplay();
+  render();
+}
+
+function allSolved(){ return Object.values(STATE.digits).every(d=>d!==null); }
+
+/* ================= RENDER ================= */
+function renderLanguage(){
+  return `<div class="card">
+    <p class="eyebrow">BLACKROCK LIGHTHOUSE · KARATAŞ FENERİ</p>
+    <h1 class="scene-title">Choose Your Language · Dilini Seç</h1>
+    <div class="scene-body"><p>Choose a language to begin the escape.<br>Kaçışa başlamak için bir dil seçin.</p></div>
+    <div class="language-grid">
+      <button class="btn language-choice" onclick="setLang('en')">ENGLISH<small>Play in English</small></button>
+      <button class="btn language-choice" onclick="setLang('tr')">TÜRKÇE<small>Türkçe oyna</small></button>
+    </div>
+    <div class="legal-note">DIGITAL DOWNLOAD · NO PHYSICAL ITEM</div>
+  </div>`;
+}
+
+function renderCover(){
+  return `
+  <div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'CONFIDENTIAL SALVAGE FILE':'GİZLİ KURTARMA DOSYASI'}</p>
+    <h1 class="scene-title">${STATE.lang==='en'?"The Lighthouse Keeper's Secret":"Fener Bekçisinin Sırrı"}</h1>
+    <div class="scene-body">
+      <p>${STATE.lang==='en'?'An escape room experience for 4–6 players. A storm. A sealed tower. Sixty minutes before the tide comes in.':'4–6 kişilik bir kaçış odası deneyimi. Bir fırtına. Mühürlü bir kule. Gelgit gelmeden önce altmış dakika.'}</p>
+    </div>
+    <div class="legal-note">${STATE.lang==='en'?'DIGITAL DOWNLOAD · NO PHYSICAL ITEM':'DİJİTAL İNDİRME · FİZİKSEL ÜRÜN GÖNDERİLMEZ'}</div>
+    <div class="choices"><button class="btn wide" onclick="go('intro')">${L(T.fileOpen)}</button></div>
+  </div>`;
+}
+
+function renderIntro(){
+  return `
+  <div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'THE STORY':'HİKAYE'}</p>
+    <h1 class="scene-title">${STATE.lang==='en'?"A Door That Won't Open":"Açılmayan Bir Kapı"}</h1>
+    <div class="scene-body">
+      ${STATE.lang==='en' ? `
+      <p>The ferryman warned you the storm was coming in fast, but the tour of Blackrock Lighthouse had already begun, and the old keeper's tales were too good to leave unfinished. Then the door slammed. Not from the wind — from somewhere deep inside the tower's iron bones, a bolt fell into place with a sound like a held breath finally let go.</p>
+      <p>A brass plate beside the door reads: <i>"When the sea rises, the tower seals itself. Only the keeper's own code, hidden in his rooms, will open her again."</i></p>
+      <p>Keeper Elias Whitlock vanished thirty years ago, on a night much like this one. He left his puzzles behind — and, if the stories are true, he left a way out too. Find his code. Open the door. Don't be here when the tide comes in.</p>` : `
+      <p>Kayıkçı fırtınanın hızla yaklaştığı konusunda sizi uyarmıştı, ama Karataş Feneri turu çoktan başlamıştı ve yaşlı bekçinin anlattıkları yarım bırakılamayacak kadar iyiydi. Sonra kapı çarpıldı. Rüzgârdan değil — kulenin demir iskeletinin derinliklerinden, sanki tutulan bir nefes sonunda bırakılmış gibi bir sesle bir sürgü yerine düştü.</p>
+      <p>Kapının yanındaki pirinç levhada şunlar yazıyor: <i>"Deniz yükseldiğinde, kule kendini mühürler. Onu yeniden ancak bekçinin odalarında saklı kendi şifresi açabilir."</i></p>
+      <p>Bekçi Elias Whitlock, otuz yıl önce, tıpkı bu geceye benzer bir gecede kayboldu. Ardında bilmeceler bıraktı — ve eğer hikayeler doğruysa, bir çıkış yolu da bıraktı. Şifresini bulun. Kapıyı açın. Gelgit geldiğinde burada olmayın.</p>`}
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('howto')">${L(T.cont)}</button></div>
+  </div>`;
+}
+
+function renderHowTo(){
+  return `
+  <div class="card">
+    <p class="eyebrow">${L(T.howToPlay)}</p>
+    <h1 class="scene-title">${STATE.lang==='en'?'Before You Begin':'Başlamadan Önce'}</h1>
+    <div class="scene-body">
+      ${STATE.lang==='en' ? `
+      <p>Best solved together, out loud, as one group of 4–6. Move through four rooms in order. Each hides one puzzle — solve it for a single digit. Collect all four, then unlock the Signal Box to escape.</p>
+      <p>Starting the climb begins your 60-minute storm timer. Stuck on a puzzle for a while? Tap "Show Hint" for a nudge.</p>` : `
+      <p>En iyi 4–6 kişilik tek bir grup olarak, birlikte ve sesli okunarak çözülür. Dört odadan sırayla geçin. Her biri bir bilmece saklar — çözerek tek bir rakam elde edin. Dördünü de toplayın, sonra Sinyal Kutusu'nun kilidini açıp kaçın.</p>
+      <p>Tırmanışa başlamak 60 dakikalık fırtına sayacınızı başlatır. Bir bilmecede uzun süre mi takıldınız? Küçük bir ipucu için "İpucunu Göster"e dokunun.</p>`}
+      <p style="font-family:'Inter',sans-serif; font-size:12.5px; color:var(--muted);">${L(T.players)}</p>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="startTimerOnce(); go('map')">${L(T.toMap)}</button></div>
+  </div>`;
+}
+
+function renderMap(){
+  const banner = STATE.timeIsUp ? `<div class="banner">${L(T.timeUp)} <span style="text-decoration:underline; cursor:pointer;" onclick="go('ending_fail')">${L(T.seeEnding)}</span></div>` : "";
+  return `
+  <div class="card">
+    ${banner}
+    <p class="eyebrow">${STATE.lang==='en'?'THE TOWER':'KULE'}</p>
+    <h1 class="scene-title">${L(T.mapTitle)}</h1>
+    <div class="map-grid">
+      ${ROOM_META.map(r=>`
+        <div class="room-card ${STATE.digits[r.key]?'solved':''}" onclick="go('${r.key}')">
+          ${STATE.digits[r.key] ? '<span class="check">✓</span>' : ''}
+          <div class="num">${r.icon}</div>
+          <div class="name">${r.name[STATE.lang]}</div>
+        </div>`).join("")}
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('signalbox')">${L(T.toSignal)}</button></div>
+  </div>`;
+}
+
+function renderRoom(key){
+  const r = ROOMS[key];
+  const solved = STATE.digits[key] !== null;
+  return `
+  <div class="card">
+    <span class="roomtag">${ROOM_META.find(m=>m.key===key).name[STATE.lang]}</span>
+    <h1 class="scene-title">${r.title[STATE.lang]}</h1>
+    <div class="scene-body">${r.flavor[STATE.lang].map(p=>`<p>${p}</p>`).join("")}</div>
+    <div class="puzzlebox">
+      <div class="lbl">${r.puzzleLbl[STATE.lang]}</div>
+      <p style="font-family:'Inter',sans-serif; font-size:13px;">${r.puzzleText[STATE.lang]}</p>
+      ${r.gulls ? `<p style="text-align:center; font-size:20px;">${r.gulls}</p>` : ""}
+      ${r.cipher ? `<div class="cipherline">${r.cipher[STATE.lang]}</div>` : ""}
+      <p class="refline">${r.ref[STATE.lang]}</p>
+    </div>
+    <p style="font-family:'Special Elite',monospace; font-size:13.5px;">${r.afterText[STATE.lang]}</p>
+    <div class="answer-row">
+      <input id="input_${key}" maxlength="1" inputmode="numeric" pattern="[0-9]*" aria-label="${STATE.lang==='en'?'Room digit':'Oda rakamı'}" onkeydown="if(event.key==='Enter')checkDigit('${key}')" ${solved?'disabled value="'+r.digit+'"':''} placeholder="?">
+      <button class="btn" onclick="checkDigit('${key}')" ${solved?'disabled':''}>${L(T.checkBtn)}</button>
+      <span class="feedback ${solved?'good':''}" id="fb_${key}">${solved?L(T.correct):''}</span>
+    </div>
+    <div class="hint-toggle">
+      <button class="btn ghost" id="hintbtn_${key}" onclick="toggleHint('${key}')">${STATE.hints[key]?L(T.hideHint):L(T.showHint)}</button>
+      <div class="hint-body ${STATE.hints[key]?'open':''}" id="hint_${key}"><p>${r.hint[STATE.lang]}</p></div>
+    </div>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('map')">${L(T.backMap)}</button></div>
+  </div>`;
+}
+
+function renderSignalBox(){
+  const ready = allSolved();
+  return `
+  <div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'THE FINAL DOOR':'SON KAPI'}</p>
+    <h1 class="scene-title">${STATE.lang==='en'?'Four Turns to Freedom':'Özgürlüğe Dört Dönüş'}</h1>
+    <div class="scene-body">
+      <p>${STATE.lang==='en'
+        ? 'An old brass control box waits, four dials worn smooth. A plaque reads: "In the order the tower taught you, turn the dials — and the sea will let you go."'
+        : 'Eski pirinç bir kontrol kutusu bekliyor, dört kadranı pürüzsüzleşmiş. Levhada şunlar yazıyor: "Kulenin sana öğrettiği sırayla kadranları çevir — deniz seni bırakacak."'}</p>
+    </div>
+    <div class="dials">
+      ${['r1','r2','r3','r4'].map(k=>`<div class="dial ${STATE.digits[k]?'':'empty'}">${STATE.digits[k] || '?'}</div>`).join("")}
+    </div>
+    <div class="choices">
+      <button class="btn wide" ${ready?'':'disabled'} onclick="${ready?"go('ending_success')":''}">${ready?L(T.turnDials):L(T.needAll)}</button>
+      <button class="btn ghost wide" onclick="go('map')">${L(T.backMap)}</button>
+    </div>
+  </div>`;
+}
+
+function renderEndingSuccess(){
+  return `
+  <div class="card">
+    <div class="stamp">${STATE.lang==='en'?'Escaped':'Kaçtınız'}</div>
+    <h2 class="scene-title">${STATE.lang==='en'?'The Door Opens':'Kapı Açılıyor'}</h2>
+    <div class="scene-body">
+      <p>${STATE.lang==='en'
+        ? "The last dial clicks into place, and somewhere deep in the tower's iron bones, the bolt slides free. The door swings open on a night gone suddenly, strangely calm — as if the storm itself had only been waiting to see if you'd solve it. On the causeway, just visible through the mist, a lantern swings. Someone has been waiting for you longer than you'd like to think about."
+        : "Son kadran yerine oturuyor ve kulenin demir iskeletinin derinliklerinde bir yerde sürgü kayıp açılıyor. Kapı, aniden ve tuhaf bir şekilde sakinleşmiş bir geceye açılıyor — sanki fırtınanın kendisi sadece onu çözüp çözemeyeceğinizi görmeyi bekliyormuş gibi. Geçitte, sisin arasından belli belirsiz, bir fener sallanıyor. Biri sizi düşünmek isteyeceğinizden çok daha uzun süredir bekliyor."}</p>
+      <p style="font-family:'Inter',sans-serif; font-size:12.5px; color:var(--muted);">${STATE.lang==='en'?'Escaped with':'Şu sürede kaçtınız:'} ${document.getElementById('timerPill')?document.getElementById('timerPill').textContent:''} ${STATE.lang==='en'?'left on the clock.':'süre kaldı.'}</p>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="resetGame()">${L(T.playAgain)}</button></div>
+  </div>`;
+}
+
+function renderEndingFail(){
+  return `
+  <div class="card">
+    <div class="stamp" style="border-color:var(--muted); color:var(--muted);">${STATE.lang==='en'?"Time's Up":'Süre Doldu'}</div>
+    <h2 class="scene-title">${STATE.lang==='en'?'The Tide Comes In':'Gelgit Geliyor'}</h2>
+    <div class="scene-body">
+      <p>${STATE.lang==='en'
+        ? "The dials sit unturned as your sixty minutes end. The tower doesn't seem to mind — it has kept its secrets for thirty years, and it will keep them a little longer. You settle in with a flask of something warm, the keeper's logbook for company, and the growing suspicion that the real puzzle was never meant to be solved in an hour at all. There's always next high tide."
+        : "Altmış dakikanız dolarken kadranlar hâlâ çevrilmeden duruyor. Kule bunu pek umursamıyor gibi görünüyor — sırlarını otuz yıldır saklıyor, biraz daha saklayacak. Sıcak bir şeylerle dolu bir matara, arkadaş olarak bekçinin kayıt defteri ve gerçek bilmecenin hiçbir zaman bir saatte çözülmesi amaçlanmadığına dair büyüyen bir şüpheyle yerleşiyorsunuz. Her zaman bir sonraki gelgit var."}</p>
+    </div>
+    <div class="choices">
+      <button class="btn wide" onclick="go('map')">${STATE.lang==='en'?'Keep Trying Anyway':'Yine de Denemeye Devam Et'}</button>
+      <button class="btn ghost wide" onclick="resetGame()">${L(T.playAgain)}</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  let html = "";
+  if(STATE.screen==='language') html = renderLanguage();
+  else if(STATE.screen==='cover') html = renderCover();
+  else if(STATE.screen==='intro') html = renderIntro();
+  else if(STATE.screen==='howto') html = renderHowTo();
+  else if(STATE.screen==='map') html = renderMap();
+  else if(['r1','r2','r3','r4'].includes(STATE.screen)) html = renderRoom(STATE.screen);
+  else if(STATE.screen==='signalbox') html = renderSignalBox();
+  else if(STATE.screen==='ending_success') html = renderEndingSuccess();
+  else if(STATE.screen==='ending_fail') html = renderEndingFail();
+  app.innerHTML = html;
+}
+
+loadState();
+document.documentElement.lang = STATE.lang;
+document.getElementById('btnEN').classList.toggle('active', STATE.lang==='en');
+document.getElementById('btnTR').classList.toggle('active', STATE.lang==='tr');
+document.getElementById('brandLabel').textContent = L(T.brand);
+if(STATE.timerStarted && !STATE.timeIsUp && STATE.timerEnd){
+  STATE.timerId = setInterval(()=>{
+    STATE.secondsLeft = Math.max(0, Math.ceil((STATE.timerEnd-Date.now())/1000));
+    if(STATE.secondsLeft<=0){ STATE.timeIsUp=true; clearInterval(STATE.timerId); }
+    saveState(); updateTimerDisplay();
+  },1000);
+}
+render();
+updateTimerDisplay();
+</script>
+</body>
+</html>

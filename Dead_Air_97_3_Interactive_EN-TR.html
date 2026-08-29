@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A bilingual, offline 1997 radio-station mystery escape room for 1–6 investigators.">
+<title>Dead Air 97.3 / Sessiz Yayın 97.3</title>
+<style>
+  :root{
+    --ink:#15110f; --ink2:#1d1712; --amber:#c8791f; --amber-light:#e0a548;
+    --red:#9c3324; --paper:#f4ecda; --paper2:#eaddbe; --text:#211b13; --muted:#8d8168;
+    --shadow:0 18px 40px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--ink); color:var(--paper); font-family:'Trebuchet MS',Arial,sans-serif; min-height:100vh; }
+  #app{max-width:900px; margin:0 auto; padding:0 16px 60px;}
+
+  .vuhead{ position:relative; height:80px; overflow:hidden; margin-bottom:20px;
+    background:radial-gradient(ellipse at 50% 120%, #1d1712 0%, var(--ink) 75%);
+    border-bottom:1px solid rgba(200,121,31,.3); display:flex; align-items:center; justify-content:center;
+  }
+  .vumeter{ position:absolute; left:20px; top:50%; transform:translateY(-50%); display:flex; align-items:flex-end; gap:3px; height:34px; }
+  .vumeter span{ width:4px; background:linear-gradient(180deg, var(--amber-light), var(--red)); border-radius:1px;
+    animation:vubounce 1.1s ease-in-out infinite; }
+  .vumeter span:nth-child(1){height:40%; animation-delay:.0s;}
+  .vumeter span:nth-child(2){height:80%; animation-delay:.15s;}
+  .vumeter span:nth-child(3){height:55%; animation-delay:.3s;}
+  .vumeter span:nth-child(4){height:95%; animation-delay:.45s;}
+  .vumeter span:nth-child(5){height:65%; animation-delay:.6s;}
+  .vumeter span:nth-child(6){height:35%; animation-delay:.75s;}
+  @keyframes vubounce{ 0%,100%{transform:scaleY(.4);} 50%{transform:scaleY(1);} }
+  .brand-text{ font-family:'Poppins',Arial,sans-serif; font-weight:800; font-size:19px; color:var(--amber-light); letter-spacing:.02em; }
+  .topbar-right{ position:absolute; right:16px; top:50%; transform:translateY(-50%); display:flex; align-items:center; gap:10px; }
+  .lang-toggle{display:flex; border:1px solid var(--amber-light); border-radius:20px; overflow:hidden;}
+  .lang-toggle button{background:transparent; border:none; color:var(--muted); padding:5px 13px; font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:11.5px; cursor:pointer;}
+  .lang-toggle button.active{background:var(--amber-light); color:#15110f;}
+  .progress-pill{ font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:12px; color:var(--paper); border:1px solid var(--amber); background:rgba(200,121,31,.25); padding:5px 12px; border-radius:20px;}
+
+  .card{ background:var(--paper); color:var(--text); border-radius:16px; padding:32px 30px 26px; box-shadow:var(--shadow); border:3px solid var(--ink); position:relative; animation:fadeUp .45s ease; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .eyebrow{ font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--amber); margin:0 0 10px; }
+  h1.t{ font-family:'Poppins',Arial,sans-serif; font-weight:800; font-size:clamp(22px,4vw,30px); color:#15110f; margin:0 0 14px; line-height:1.2; }
+  h2.t{ font-family:'Poppins',Arial,sans-serif; font-weight:800; font-size:21px; color:#15110f; margin:0 0 12px; }
+  .body p{ font-family:'Georgia',serif; font-weight:400; font-size:16px; line-height:1.65; color:var(--text); margin:0 0 14px; }
+  loctag,.loctag{ display:inline-block; font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:11px; letter-spacing:.08em; color:#fff; background:var(--amber); padding:4px 12px; border-radius:20px; margin-bottom:10px; }
+  .cluebox{ border:3px solid var(--ink); border-radius:14px; padding:16px 18px; margin:14px 0; background:var(--paper2); }
+  .cluebox .lbl{ font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:10.5px; color:var(--red); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+  .cluebox table{ width:100%; border-collapse:collapse; font-family:'Courier New',monospace; font-size:13px; margin-top:6px;}
+  .cluebox th{ text-align:left; color:var(--amber); font-family:'Poppins',Arial,sans-serif; font-size:10.5px; text-transform:uppercase; padding:4px 6px; border-bottom:1px solid #cdbd95;}
+  .cluebox td{ padding:4px 6px; border-bottom:1px dotted #d9cba4; }
+  .cluebox tr:nth-child(even) td{ background:rgba(255,255,255,.35); }
+  .star{ color:var(--red); font-weight:800; }
+  .answer-row{ display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .answer-row input{ width:64px; height:54px; text-align:center; font-family:'Poppins',Arial,sans-serif; font-weight:800; font-size:22px; border:3px solid var(--ink); border-radius:10px; background:#fff; color:var(--text); }
+  .btn{ background:var(--ink); color:var(--paper); border:2px solid var(--amber-light); border-radius:10px; padding:12px 18px; font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:13.5px; cursor:pointer; transition:.15s; }
+  .btn:hover{ background:var(--amber); border-color:var(--amber-light); }
+  .btn:focus-visible,.lang-toggle button:focus-visible{outline:3px solid #fff; outline-offset:3px;}
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.wide{ width:100%; }
+  .btn.ghost{ background:transparent; color:var(--amber); border:2px solid var(--amber); }
+  .feedback{ font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:13px; margin-top:10px; min-height:18px; }
+  .feedback.good{ color:#1f7a3c; }
+  .feedback.bad{ color:var(--red); }
+  .hint-toggle{ margin-top:14px; }
+  .hint-body{ margin-top:10px; border:2px dashed var(--amber); border-radius:10px; padding:12px 14px; background:#efe0bc; font-family:'Trebuchet MS',Arial,sans-serif; font-weight:600; font-size:13.5px; color:#5a4020; display:none; }
+  .hint-body.open{ display:block; }
+  .map-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:18px 0 8px; }
+  .room-card{ background:var(--ink2); border:2px solid var(--amber-light); border-radius:14px; padding:16px 14px; text-align:center; cursor:pointer; transition:.15s; color:var(--paper); position:relative; }
+  .room-card:hover{ background:var(--amber); border-color:var(--amber-light); }
+  .room-card .check{ position:absolute; top:8px; right:10px; color:var(--amber-light); font-size:14px; }
+  .room-card .name{ font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:12.5px; }
+  .dials{ display:flex; gap:14px; justify-content:center; margin:22px 0; flex-wrap:wrap; }
+  .dial{ width:62px; height:62px; border:4px solid var(--ink); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:'Poppins',Arial,sans-serif; font-weight:800; font-size:22px; background:#fff; color:var(--text); }
+  .dial.empty{ color:#ccc; }
+  .choices{ display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+  .stamp{ display:inline-block; border:4px solid var(--amber); color:var(--amber); font-family:'Poppins',Arial,sans-serif; font-weight:800; letter-spacing:.04em; padding:8px 20px; transform:rotate(-4deg); border-radius:12px; margin:8px 0 18px; font-size:17px; }
+  .banner{ background:rgba(200,121,31,.1); border:2px solid var(--amber); color:#7a3a1c; font-family:'Trebuchet MS',Arial,sans-serif; font-weight:700; font-size:13px; padding:10px 14px; border-radius:10px; margin-bottom:16px; }
+  .language-card{text-align:center; padding-top:42px; padding-bottom:42px;}
+  .language-mark{width:76px;height:76px;margin:0 auto 18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    border:3px solid var(--ink);background:linear-gradient(145deg,var(--amber-light),var(--red));font-weight:800;font-size:15px;color:#fff2d8;}
+  .language-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px;}
+  .offline-note{font-family:'Trebuchet MS',Arial,sans-serif;font-weight:700;font-size:12.5px;color:#5a4020;
+    background:#efe0bc;border:2px dashed var(--amber);border-radius:10px;padding:10px 12px;margin:18px 0 0;}
+  .evbox{border-left:4px solid var(--red); padding:8px 0 8px 12px; margin:10px 0; background:rgba(156,51,36,.06); border-radius:0 8px 8px 0;}
+  .evbox .lbl{font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:10px; color:var(--red); text-transform:uppercase; letter-spacing:.05em;}
+  @media (max-width:640px){
+    #app{padding-left:12px;padding-right:12px;}
+    .vuhead{height:112px;margin-bottom:14px;align-items:flex-start;}
+    .vumeter{height:26px;left:12px;top:30px;}
+    .brand-text{position:absolute;left:60px;right:12px;top:17px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .topbar-right{top:auto;right:12px;bottom:14px;transform:none;}
+    .card{padding:22px 18px 20px;}
+    .cluebox table{font-size:11.5px;}
+  }
+  @media (max-width:420px){
+    .language-actions{grid-template-columns:1fr;}
+    .dials{gap:7px;}
+    .dial{width:53px;height:53px;}
+    .answer-row input{width:54px;height:48px;font-size:19px;}
+  }
+  @media (prefers-reduced-motion:reduce){.vumeter span,.card{animation:none;}html{scroll-behavior:auto;}}
+  .card::before{
+    content:""; position:absolute; top:14px; right:18px; width:52px; height:52px;
+    border-radius:50%; border:2px solid #c8791f; opacity:.18; z-index:0; pointer-events:none;
+  }
+  .card::after{
+    content:""; position:absolute; top:14px; right:18px; width:52px; height:52px;
+    background:
+      radial-gradient(circle at 50% 50%, transparent 0 6px, #c8791f 6px 7px, transparent 7px);
+    opacity:.18; z-index:0; pointer-events:none;
+  }
+  .card > *{ position:relative; z-index:1; }
+</style>
+</head>
+<body>
+<div class="vuhead">
+  <div class="vumeter"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="brand-text" id="brandLabel">DEAD AIR 97.3</div>
+  <div class="topbar-right">
+    <div class="progress-pill" id="progressPill">·</div>
+    <div class="lang-toggle" aria-label="Language / Dil">
+      <button type="button" id="btnEN" onclick="setLang('en')" aria-label="English">EN</button>
+      <button type="button" id="btnTR" onclick="setLang('tr')" aria-label="Türkçe">TR</button>
+    </div>
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+const T = {
+  brand:{en:"DEAD AIR 97.3", tr:"SESSİZ YAYIN 97.3"},
+  begin:{en:"Open the File", tr:"Dosyayı Aç"},
+  cont:{en:"Continue", tr:"Devam Et"},
+  toHub:{en:"Go to the Map", tr:"Haritaya Git"},
+  checkBtn:{en:"Check", tr:"Kontrol Et"},
+  correct:{en:"Locked in. Digit secured.", tr:"Kilitlendi. Hane güvende."},
+  wrong:{en:"Not quite — check your work.", tr:"Tam değil — tekrar kontrol edin."},
+  showHint:{en:"🔍 Show Hint", tr:"🔍 İpucunu Göster"},
+  hideHint:{en:"Hide Hint", tr:"İpucunu Gizle"},
+  toVault:{en:"Go to the Tape Archive", tr:"Kaset Arşivine Git"},
+  needAll:{en:"Solve the four ciphered locations first.", tr:"Önce dört şifreli mekânı çözün."},
+  enterCode:{en:"Open the Archive Box", tr:"Arşiv Kutusunu Aç"},
+  backHub:{en:"◂ Back to the Map", tr:"◂ Haritaya Dön"},
+  playAgain:{en:"Restart Investigation", tr:"Soruşturmayı Yeniden Başlat"},
+  players:{en:"Investigators: 1–6 · Time: 45–60 min", tr:"Dedektif Sayısı: 1–6 · Süre: 45–60 dakika"},
+  visited:{en:"Visited — no digit here", tr:"Ziyaret edildi — burada hane yok"},
+  markVisited:{en:"Mark as Read", tr:"Okundu Olarak İşaretle"},
+};
+
+const LOC_META = [
+  {key:"studio", icon:"🎙", en:"Studio A", tr:"Stüdyo A", puzzle:true},
+  {key:"library", icon:"💿", en:"Record Library", tr:"Plak Arşivi", puzzle:true},
+  {key:"phone", icon:"☎", en:"Phone Booth", tr:"Telefon Kulübesi", puzzle:true},
+  {key:"desk", icon:"🗄", en:"Producer's Desk", tr:"Yapımcı Masası", puzzle:true},
+  {key:"rooftop", icon:"📡", en:"Rooftop Antenna", tr:"Çatı Anteni", puzzle:false},
+  {key:"archive", icon:"📼", en:"Tape Archive", tr:"Kaset Arşivi", vault:true},
+];
+
+const LOCATIONS = {
+  studio:{
+    answerCode:"Nw==",
+    title:{en:"Studio A", tr:"Stüdyo A"},
+    flavor:{en:"The on-air light is still lit. Milo's headphones sit on the console, one earcup still warm. A ventilation panel behind the record shelf hangs loose on one hinge — just wide enough for a grown man on his knees.",
+            tr:"Yayın lambası hâlâ yanıyor. Milo'nun kulaklığı konsolun üstünde, bir kulaklığı hâlâ ılık. Plak rafının arkasındaki havalandırma paneli bir menteşesinden sarkıyor — dizlerinin üstünde sürünen yetişkin bir insana yetecek genişlikte."},
+    evidence:{en:"The loose vent panel opens onto a crawlspace that runs straight to the Tape Archive corridor.",
+              tr:"Gevşek havalandırma paneli, doğrudan Kaset Arşivi koridoruna açılan bir sürünme boşluğuna açılıyor."},
+    puzzleLbl:{en:"Four songs on tonight's playlist (marked ★) aired longer than the sleeve says. Every marked song was stretched by the exact same number of seconds. Find that number — it's your archive digit.",
+               tr:"Bu geceki çalma listesindeki dört şarkı (★ işaretli) kılıflarında yazandan daha uzun sürmüş. İşaretli her şarkı tam olarak aynı saniye kadar uzatılmış. O sayıyı bulun — bu, arşiv haneniz."},
+    table:{
+      head:{en:["#","Track","Sleeve","Aired"], tr:["#","Parça","Kılıf","Yayın"]},
+      rows:{
+        en:[
+          ["1","Night Drive","3:14","3:14"],
+          ["2","Chrome Static ★","2:58","3:05"],
+          ["3","Amber Light ★","4:02","4:09"],
+          ["4","Same Old Rain ★","2:50","2:57"],
+          ["5","Slow Fade ★","3:40","3:47"],
+          ["6","Night Drive (Reprise)","1:30","1:30"],
+        ],
+        tr:[
+          ["1","Gece Sürüşü","3:14","3:14"],
+          ["2","Krom Parazit ★","2:58","3:05"],
+          ["3","Kehribar Işık ★","4:02","4:09"],
+          ["4","Hep Aynı Yağmur ★","2:50","2:57"],
+          ["5","Yavaş Sönüş ★","3:40","3:47"],
+          ["6","Gece Sürüşü (Reprise)","1:30","1:30"],
+        ],
+      }
+    },
+    hint:{en:"Look only at the four starred tracks. Subtract each sleeve time from its aired time — the gap is identical every time.",
+          tr:"Yalnızca yıldızlı dört parçaya bakın. Her birinin kılıf süresini yayın süresinden çıkarın — fark her seferinde aynı."}
+  },
+  phone:{
+    answerCode:"Mw==",
+    title:{en:"Phone Booth", tr:"Telefon Kulübesi"},
+    flavor:{en:"The payphone across the alley still has a coffee cup balanced on its shelf. Beside it, a cassette in an unmarked case — someone taped over the receiver during the last three threatening calls the station logged this month.",
+            tr:"Ara sokaktaki ankesörlü telefonun rafında hâlâ bir kahve bardağı duruyor. Yanında, üzerinde etiket olmayan bir kutuda kaset var — istasyonun bu ay kaydettiği son üç tehdit araması sırasında biri ahizeyi bantlamış."},
+    evidence:{en:"A phone number on the coffee lid traces to the station owner's private office.",
+              tr:"Kahve kapağındaki telefon numarası, istasyon sahibinin özel ofisine çıkıyor."},
+    puzzleLbl:{en:"Under the rain and traffic, a two-tone train horn sounds and repeats a fixed number of times before the tape cuts to static. Count the repeats — that's your archive digit.",
+               tr:"Yağmur ve trafiğin altında çift tonlu bir tren kornası duyuluyor ve kaset parazite dönüşmeden önce sabit bir sayıda tekrarlanıyor. Tekrar sayısını bulun — bu, arşiv haneniz."},
+    table:{
+      head:{en:["Time","Tape Transcript"], tr:["Zaman","Kaset Dökümü"]},
+      rows:{
+        en:[
+          ["0:04","rain begins"],
+          ["0:09","traffic swells, a bus brakes hard"],
+          ["0:14","train horn — long, short, long, short"],
+          ["0:22","train horn — long, short, long, short"],
+          ["0:31","train horn — long, short, long, short"],
+          ["0:40","static overtakes the tape"],
+        ],
+        tr:[
+          ["0:04","yağmur başlıyor"],
+          ["0:09","trafik yükseliyor, bir otobüs sert fren yapıyor"],
+          ["0:14","tren kornası — uzun, kısa, uzun, kısa"],
+          ["0:22","tren kornası — uzun, kısa, uzun, kısa"],
+          ["0:31","tren kornası — uzun, kısa, uzun, kısa"],
+          ["0:40","parazit kaseti kaplıyor"],
+        ],
+      }
+    },
+    hint:{en:"Count only the lines that mention the train horn.",
+          tr:"Yalnızca tren kornasından bahseden satırları sayın."}
+  },
+  library:{
+    answerCode:"OA==",
+    title:{en:"Record Library", tr:"Plak Arşivi"},
+    flavor:{en:"Floor-to-ceiling vinyl bins, alphabetized within an inch of their lives — except one shelf, where four price stickers have been peeled back at the corner.",
+            tr:"Tavana kadar plak kutuları, harf harf titizlikle dizilmiş — tek bir raf hariç; orada dört fiyat etiketinin köşesi soyulmuş."},
+    evidence:{en:"Behind the stickers, the shelf tags spell S · A · F · E.",
+              tr:"Etiketlerin arkasında, raf kartları S · A · F · E (GÜVENLİ) yazıyor."},
+    puzzleLbl:{en:"SAFE points to a record filed under that word. Find the sleeve that's out of alphabetical order below — its slot number is your archive digit.",
+               tr:"GÜVENLİ, o kelimeyle dosyalanmış bir plağa işaret ediyor. Aşağıda alfabetik sıradan çıkmış kılıfı bulun — raf numarası, arşiv haneniz."},
+    table:{
+      head:{en:["Slot","Sleeve"], tr:["Raf","Kılıf"]},
+      rows:{
+        en:[
+          ["6","Rolling Static — \"Overnight\""],
+          ["7","Rust & Radio — \"Low Signal\""],
+          ["8","Safe As Houses — \"Corner Booth\""],
+          ["9","Salt City Sirens — \"Harborlight\""],
+          ["10","Sundown Radios — \"Analog Ghost\""],
+        ],
+        tr:[
+          ["6","Rolling Static — \"Overnight\""],
+          ["7","Rust & Radio — \"Low Signal\""],
+          ["8","Safe As Houses — \"Corner Booth\""],
+          ["9","Salt City Sirens — \"Harborlight\""],
+          ["10","Sundown Radios — \"Analog Ghost\""],
+        ],
+      }
+    },
+    hint:{en:"Everything here is filed alphabetically by band name — except one sleeve, wedged where it doesn't belong.",
+          tr:"Buradaki her şey grup adına göre alfabetik dizilmiş — tek bir kılıf hariç, ait olmadığı bir yere sıkıştırılmış."}
+  },
+  desk:{
+    answerCode:"NQ==",
+    title:{en:"Producer's Desk", tr:"Yapımcı Masası"},
+    flavor:{en:"Cass Reed's desk, exactly as she left it: a routing log open to tonight's date, a cold mug, and a fax curling out of the machine that no one has read yet.",
+            tr:"Cass Reed'in masası, bıraktığı haliyle: bu geceye açık bir yönlendirme kaydı, soğumuş bir kupa ve faks makinesinden kimsenin henüz okumadığı bir kağıt sarkıyor."},
+    evidence:{en:"The threatening fax was typed on this same machine — its crooked 'e' matches station owner Miles Kerr's paste-ups.",
+              tr:"Tehdit faksı aynı bu makinede yazılmış — eğri 'e' harfi istasyon sahibi Miles Kerr'in taslaklarıyla örtüşüyor."},
+    puzzleLbl:{en:"Compare the two logs below. How many minutes of true, unplanned dead air sit between them? That gap is your archive digit.",
+               tr:"Aşağıdaki iki kaydı karşılaştırın. Aralarında kaç dakikalık gerçek, plansız bir sessizlik var? Bu boşluk, arşiv haneniz."},
+    table:{
+      head:{en:["Log","Time","Event"], tr:["Kayıt","Zaman","Olay"]},
+      rows:{
+        en:[
+          ["MIC","11:58 PM","Cass Reed routes Transmitter B — standby"],
+          ["MIC","12:03 AM","Milo: \"...about to tell you who bought it.\""],
+          ["MIC","12:07 AM","Live mic goes silent"],
+          ["REEL","12:07 AM","Transmitter A (live) — dead air"],
+          ["REEL","12:12 AM","Transmitter B — prerecorded reel begins"],
+          ["REEL","12:24 AM","Transmitter B — reel ends"],
+        ],
+        tr:[
+          ["MİK","23:58","Cass Reed Verici B'yi yönlendiriyor — beklemede"],
+          ["MİK","00:03","Milo: \"...ve şimdi onu kimin satın aldığını söyleyeceğim.\""],
+          ["MİK","00:07","Canlı mikrofon sessizleşiyor"],
+          ["BOBİN","00:07","Verici A (canlı) — sessiz yayın"],
+          ["BOBİN","00:12","Verici B — ön kayıt bobin başlıyor"],
+          ["BOBİN","00:24","Verici B — bobin bitiyor"],
+        ],
+      }
+    },
+    hint:{en:"The mic goes silent at 12:07. The prerecorded reel doesn't begin until 12:12. What's the gap?",
+          tr:"Mikrofon 00:07'de sessizleşiyor. Ön kayıt bobin ancak 00:12'de başlıyor. Aradaki fark ne?"}
+  },
+  rooftop:{
+    title:{en:"Rooftop Antenna", tr:"Çatı Anteni"},
+    flavor:{en:"Rain-slicked steel stairs lead to the transmitter mast. Zip-tied to the base of the antenna, out of sight from the street: a portable DAT player, wired straight into Transmitter B.",
+            tr:"Yağmurdan kayganlaşmış çelik merdivenler verici direğine çıkıyor. Antenin tabanına kelepçeyle bağlanmış, sokaktan görünmeyen bir yerde: doğrudan Verici B'ye kablolanmış taşınabilir bir DAT çalar."},
+    evidence:{en:"A kitchen egg-timer taped beside the player is set to trigger playback at 12:12 — the exact minute Transmitter B's log begins.",
+              tr:"Çaların yanına bantlanmış bir mutfak zamanlayıcısı, tam Verici B kaydının başladığı dakika olan 00:12'de çalmaya ayarlanmış."},
+  }
+};
+
+const STORAGE_KEY = "dead-air-97-3-progress-v1";
+function freshState(lang=null){
+  return {lang, screen:lang?"cover":"language", digits:{studio:null,phone:null,library:null,desk:null}, hints:{}, visitedRooftop:false};
+}
+function loadState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(!saved || !["en","tr",null].includes(saved.lang)) return freshState();
+    const clean = freshState(saved.lang);
+    const screens = ["language","cover","howto","mission","hub","studio","phone","library","desk","rooftop","archive","solved","tryagain"];
+    clean.screen = screens.includes(saved.screen) ? saved.screen : (saved.lang?"cover":"language");
+    for(const key of ["studio","phone","library","desk"]){
+      const value = saved.digits && saved.digits[key];
+      clean.digits[key] = value === answerFor(key) ? value : null;
+      clean.hints[key] = Boolean(saved.hints && saved.hints[key]);
+    }
+    clean.visitedRooftop = Boolean(saved.visitedRooftop);
+    if(clean.screen === "solved" && !Object.values(clean.digits).every(Boolean)) clean.screen = "hub";
+    return clean;
+  }catch(error){ return freshState(); }
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }catch(error){ /* Private browsing may block storage. */ }
+}
+function answerFor(key){ return atob(LOCATIONS[key].answerCode); }
+
+let STATE = loadState();
+
+function L(obj){ return obj[STATE.lang || 'en']; }
+function setLang(l){
+  STATE.lang = l;
+  document.documentElement.lang = l;
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnTR').classList.toggle('active', l==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  if(STATE.screen === 'language') STATE.screen = 'cover';
+  saveState();
+  render();
+}
+function go(screen){
+  STATE.screen = screen;
+  if(screen === 'rooftop') STATE.visitedRooftop = true;
+  saveState();
+  window.scrollTo({top:0,behavior:'smooth'});
+  render();
+}
+function resetGame(){
+  const prompt = STATE.lang==='tr' ? 'Tüm ilerleme silinsin ve soruşturma yeniden başlatılsın mı?' : 'Clear all progress and restart the investigation?';
+  if(!window.confirm(prompt)) return;
+  const selectedLang = STATE.lang || 'en';
+  STATE = freshState(selectedLang);
+  saveState();
+  render();
+}
+function allSolved(){ return Object.values(STATE.digits).every(d=>d!==null); }
+const DIGIT_ORDER = ["studio","phone","library","desk"];
+function codeString(){ return DIGIT_ORDER.map(k=>STATE.digits[k]).join(""); }
+function digitsOnly(input){ input.value = input.value.replace(/\D/g, '').slice(0,1); }
+function advanceVault(input,nextId){ digitsOnly(input); if(input.value && nextId) document.getElementById(nextId).focus(); }
+
+function checkDigit(key){
+  const input = document.getElementById('input_'+key);
+  const fb = document.getElementById('fb_'+key);
+  const val = (input.value||"").trim();
+  if(val === answerFor(key)){
+    STATE.digits[key] = val;
+    fb.textContent = L(T.correct); fb.className = "feedback good"; input.disabled = true;
+  } else {
+    fb.textContent = L(T.wrong); fb.className = "feedback bad";
+  }
+  saveState();
+  updateProgressPill();
+}
+function toggleHint(key){
+  STATE.hints[key] = !STATE.hints[key];
+  saveState();
+  document.getElementById('hint_'+key).classList.toggle('open', STATE.hints[key]);
+  document.getElementById('hintbtn_'+key).textContent = STATE.hints[key] ? L(T.hideHint) : L(T.showHint);
+}
+function checkVault(){
+  const boxes = ['v1','v2','v3','v4'].map(id=>document.getElementById(id).value.trim());
+  go(boxes.join("") === codeString() ? 'solved' : 'tryagain');
+}
+function updateProgressPill(){
+  const pill = document.getElementById('progressPill');
+  if(!pill) return;
+  pill.textContent = Object.values(STATE.digits).filter(d=>d!==null).length + " / 4";
+}
+
+function renderLanguage(){
+  return `<div class="card language-card">
+    <div class="language-mark">97.3</div>
+    <p class="eyebrow">DEAD AIR 97.3 · SESSİZ YAYIN 97.3</p>
+    <h1 class="t">Choose Your Language<br>Dilini Seç</h1>
+    <div class="body"><p>Start the investigation in English or Turkish.<br>Soruşturmayı İngilizce veya Türkçe başlat.</p></div>
+    <div class="language-actions">
+      <button type="button" class="btn wide" onclick="setLang('en')">English</button>
+      <button type="button" class="btn wide" onclick="setLang('tr')">Türkçe</button>
+    </div>
+    <div class="offline-note">No installation required · Kurulum gerekmez · Works offline / Çevrimdışı çalışır · No data collected / Veri toplanmaz</div>
+  </div>`;
+}
+
+function renderCover(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'TOP SECRET · CASE FILE':'ÇOK GİZLİ · VAKA DOSYASI'}</p>
+    <h1 class="t">${STATE.lang==='en'?'Dead Air 97.3':'Sessiz Yayın 97.3'}</h1>
+    <div class="body"><p>${STATE.lang==='en'?'12:03 AM. The turntable is still spinning. The DJ is not. A digital investigation companion for the Dead Air 97.3 print-and-play mystery.':'Gece yarısı 00:03. Pikap hâlâ dönüyor. DJ dönmüyor. Dead Air 97.3 yazdır-ve-oyna gizeminin dijital soruşturma yoldaşı.'}</p></div>
+    <div class="offline-note">${STATE.lang==='en'?'No installation or account required. Works offline, saves progress on this device, and collects no data.':'Kurulum veya hesap gerekmez. Çevrimdışı çalışır, ilerlemeyi bu cihaza kaydeder ve veri toplamaz.'}</div>
+    <div class="choices"><button type="button" class="btn wide" onclick="go('howto')">${L(T.begin)}</button></div>
+  </div>`;
+}
+function renderHowTo(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'HOW TO PLAY':'NASIL OYNANIR'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Welcome, Investigator':'Hoş Geldiniz, Dedektif'}</h2>
+    <div class="body">
+      <p>${STATE.lang==='en'?"Visit each location, gather evidence, and solve four ciphers to build a 4-digit archive code. Then open the Tape Archive to hear what really happened.":"Her mekânı ziyaret edin, kanıt toplayın ve 4 haneli bir arşiv kodu oluşturmak için dört şifreyi çözün. Sonra gerçekte ne olduğunu duymak için Kaset Arşivi'ni açın."}</p>
+      <p style="font-family:'Poppins',Arial,sans-serif; font-size:12.5px; color:var(--muted);">${L(T.players)}</p>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('mission')">${L(T.cont)}</button></div>
+  </div>`;
+}
+function renderMission(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'THE CASE':'VAKA'}</p>
+    <h2 class="t">${STATE.lang==='en'?'The Empty Chair':'Boş Koltuk'}</h2>
+    <div class="body">
+      <p>${STATE.lang==='en'?"KJRX 97.3's midnight host, Milo Vex, was seconds from naming the buyer who'd secretly steered the station's playlist for kickbacks — live, on air, to 40,000 listeners. Then the song ended. His chair was empty. Studio A was locked from the inside.":"KJRX 97.3'ün gece yarısı sunucusu Milo Vex, istasyonun çalma listesini rüşvet karşılığında gizlice yönlendiren alıcının adını canlı yayında, 40.000 dinleyiciye açıklamasına saniyeler kala kayboldu. Sonra şarkı bitti. Koltuğu boştu. Stüdyo A içeriden kilitliydi."}</p>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('hub')">${L(T.toHub)}</button></div>
+  </div>`;
+}
+function renderMap(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'KJRX 97.3 · AFTER HOURS':'KJRX 97.3 · MESAİ SONRASI'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Six Locations to Search':'Aranacak Altı Mekân'}</h2>
+    <div class="map-grid">
+      ${LOC_META.map(r=>{
+        let solved = r.puzzle ? STATE.digits[r.key]!==null : (r.key==='rooftop' ? STATE.visitedRooftop : allSolved());
+        return `<div class="room-card" onclick="go('${r.key}')">${solved?'<span class="check">✓</span>':''}<div style="font-size:24px;">${r.icon}</div><div class="name">${r[STATE.lang]}</div></div>`;
+      }).join("")}
+    </div>
+  </div>`;
+}
+function renderRoom(key){
+  const r = LOCATIONS[key];
+  const solved = STATE.digits[key] !== null;
+  return `<div class="card">
+    <span class="loctag">${LOC_META.find(m=>m.key===key)[STATE.lang]}</span>
+    <h2 class="t">${r.title[STATE.lang]}</h2>
+    <div class="body"><p>${r.flavor[STATE.lang]}</p></div>
+    <div class="evbox"><div class="lbl">${STATE.lang==='en'?'Evidence':'Kanıt'}</div>${r.evidence[STATE.lang]}</div>
+    <div class="cluebox">
+      <div class="lbl">${STATE.lang==='en'?'Your Task':'Göreviniz'}</div>
+      <p style="margin:0 0 10px; font-family:'Trebuchet MS',Arial,sans-serif; font-weight:600; font-size:14px;">${r.puzzleLbl[STATE.lang]}</p>
+      <table>
+        <thead><tr>${r.table.head[STATE.lang].map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+        <tbody>${r.table.rows[STATE.lang].map(row=>`<tr>${row.map(cell=>`<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table>
+    </div>
+    <div class="answer-row">
+      <input id="input_${key}" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="${STATE.lang==='en'?'Archive digit':'Arşiv hanesi'}" oninput="digitsOnly(this)" onkeydown="if(event.key==='Enter')checkDigit('${key}')" ${solved?'disabled value="'+answerFor(key)+'"':''} placeholder="?">
+      <button type="button" class="btn" onclick="checkDigit('${key}')" ${solved?'disabled':''}>${L(T.checkBtn)}</button>
+      <span class="feedback ${solved?'good':''}" id="fb_${key}" role="status" aria-live="polite">${solved?L(T.correct):''}</span>
+    </div>
+    <div class="hint-toggle">
+      <button class="btn ghost" id="hintbtn_${key}" onclick="toggleHint('${key}')">${STATE.hints[key]?L(T.hideHint):L(T.showHint)}</button>
+      <div class="hint-body ${STATE.hints[key]?'open':''}" id="hint_${key}">${r.hint[STATE.lang]}</div>
+    </div>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('hub')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderRooftop(){
+  const r = LOCATIONS.rooftop;
+  return `<div class="card">
+    <span class="loctag">${LOC_META.find(m=>m.key==='rooftop')[STATE.lang]}</span>
+    <h2 class="t">${r.title[STATE.lang]}</h2>
+    <div class="body"><p>${r.flavor[STATE.lang]}</p></div>
+    <div class="evbox"><div class="lbl">${STATE.lang==='en'?'Evidence':'Kanıt'}</div>${r.evidence[STATE.lang]}</div>
+    <p style="font-family:'Poppins',Arial,sans-serif; font-size:11.5px; color:var(--muted);">${STATE.lang==='en'?'No cipher here — just a lead worth remembering.':'Burada şifre yok — sadece hatırlanmaya değer bir ipucu.'}</p>
+    <div class="choices"><button class="btn ghost wide" onclick="go('hub')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderVault(){
+  const ready = allSolved();
+  return `<div class="card">
+    <span class="loctag">${LOC_META.find(m=>m.key==='archive')[STATE.lang]}</span>
+    <h2 class="t">${STATE.lang==='en'?'Four Digits to Unlock':'Açmak İçin Dört Hane'}</h2>
+    <div class="body"><p>${STATE.lang==='en'?"Behind the 1987 shelf: Milo's coat, and a single reel marked IF I VANISH — locked in a combination archive box.":"1987 rafının arkasında: Milo'nun ceketi ve kutusuna KAYBOLURSAM yazılmış, şifreli bir arşiv kutusunda kilitli tek bir bobin."}</p></div>
+    <div class="dials">${DIGIT_ORDER.map(k=>`<div class="dial ${STATE.digits[k]?'':'empty'}">${STATE.digits[k]||'?'}</div>`).join("")}</div>
+    ${ready?`
+    <div class="answer-row" style="justify-content:center;">
+      <input id="v1" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="1" oninput="advanceVault(this,'v2')" placeholder="?">
+      <input id="v2" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="2" oninput="advanceVault(this,'v3')" placeholder="?">
+      <input id="v3" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="3" oninput="advanceVault(this,'v4')" placeholder="?">
+      <input id="v4" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="4" oninput="advanceVault(this,null)" onkeydown="if(event.key==='Enter')checkVault()" placeholder="?">
+    </div>
+    <div class="choices"><button class="btn wide" onclick="checkVault()">${L(T.enterCode)}</button></div>`
+    : `<p style="text-align:center; font-family:'Poppins',Arial,sans-serif; font-weight:600; color:var(--muted);">${L(T.needAll)}</p>`}
+    <div class="choices"><button class="btn ghost wide" onclick="go('hub')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderSolved(){
+  return `<div class="card">
+    <div class="stamp">${STATE.lang==='en'?'Case Closed':'Dosya Kapandı'}</div>
+    <h2 class="t">${STATE.lang==='en'?'The Reel Marked "If I Vanish"':'"Kaybolursam" Yazılı Bobin'}</h2>
+    <div class="body"><p>${STATE.lang==='en'
+      ?"Milo Vex staged his own disappearance to force out a story no editor would run: station owner Miles Kerr had been secretly selling airtime for kickbacks, and threatened Milo into silence when he found out. Cass Reed helped build the cover window on Transmitter B, never knowing Milo meant to vanish completely. At 12:07, Milo slipped through the loose vent panel, crawled to the Tape Archive, and let himself out through the service exit. The reel is his own voice, naming names — recorded before he left, cued to air the moment this box was opened."
+      :"Milo Vex, hiçbir editörün yayınlamayacağı bir haberi gün yüzüne çıkarmak için kendi kayboluşunu sahneledi: istasyon sahibi Miles Kerr, rüşvet karşılığında yayın süresi satıyordu ve bunu öğrendiğinde Milo'yu susturmak için tehdit etmişti. Cass Reed, Verici B'deki örtü penceresini kurmasına yardım etti; Milo'nun tamamen kaybolmayı planladığını hiç bilmiyordu. 00:07'de Milo gevşek havalandırma panelinden sıyrılıp Kaset Arşivi'ne süründü ve servis çıkışından ayrıldı. Bobin, ayrılmadan önce kaydettiği kendi sesi — isimler veriyor, bu kutu açıldığı anda yayınlanmak üzere hazırlanmış."}</p></div>
+    <div class="choices"><button type="button" class="btn wide" onclick="resetGame()">${L(T.playAgain)}</button></div>
+  </div>`;
+}
+function renderTryAgain(){
+  return `<div class="card">
+    <div class="stamp" style="border-color:var(--muted); color:var(--muted);">${STATE.lang==='en'?'Not Yet!':'Henüz Değil!'}</div>
+    <h2 class="t">${STATE.lang==='en'?'The Box Stays Shut':'Kutu Kapalı Kalıyor'}</h2>
+    <div class="body"><p>${STATE.lang==='en'
+      ?"That code doesn't match. Double-check your four digits against each location's clue, then try again."
+      :"Bu kod uyuşmuyor. Dört hanenizi her mekânın ipucuyla tekrar karşılaştırıp yeniden deneyin."}</p></div>
+    <div class="choices">
+      <button class="btn wide" onclick="go('archive')">${STATE.lang==='en'?'Try Again':'Tekrar Dene'}</button>
+      <button type="button" class="btn ghost wide" onclick="resetGame()">${L(T.playAgain)}</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  document.documentElement.lang = STATE.lang || 'en';
+  document.getElementById('btnEN').classList.toggle('active', STATE.lang==='en');
+  document.getElementById('btnTR').classList.toggle('active', STATE.lang==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  let html = "";
+  if(STATE.screen==='language') html = renderLanguage();
+  else if(STATE.screen==='cover') html = renderCover();
+  else if(STATE.screen==='howto') html = renderHowTo();
+  else if(STATE.screen==='mission') html = renderMission();
+  else if(STATE.screen==='hub') html = renderMap();
+  else if(STATE.screen==='rooftop') html = renderRooftop();
+  else if(STATE.screen==='archive') html = renderVault();
+  else if(['studio','phone','library','desk'].includes(STATE.screen)) html = renderRoom(STATE.screen);
+  else if(STATE.screen==='solved') html = renderSolved();
+  else if(STATE.screen==='tryagain') html = renderTryAgain();
+  app.innerHTML = html;
+  updateProgressPill();
+}
+render();
+</script>
+</body>
+</html>

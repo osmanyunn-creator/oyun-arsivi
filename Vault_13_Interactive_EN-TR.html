@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vault 13 — Interactive Escape Room | EN + TR</title>
+<style>
+  :root{
+    --ink:#0d0f16; --ink2:#151827; --navy:#1b1f33; --navy2:#232847;
+    --brass:#c9a24b; --brass-light:#e0c274;
+    --rust:#8a2e2e;
+    --paper:#efe8d8; --paper2:#e4dcc6; --text:#201c16; --muted:#7d765f;
+    --shadow:0 18px 40px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--ink); color:var(--paper); font-family:Arial,'DejaVu Sans',sans-serif; min-height:100vh; }
+  #app{max-width:900px; margin:0 auto; padding:0 16px 60px;}
+
+  .misthead{ position:relative; height:78px; overflow:hidden; margin-bottom:20px;
+    background:linear-gradient(180deg, var(--navy2) 0%, var(--ink) 85%);
+    border-bottom:2px solid var(--brass);
+  }
+  .holerow{ position:absolute; top:0; left:0; right:0; height:8px; display:flex; justify-content:space-evenly; align-items:center; }
+  .holerow span{ width:6px; height:6px; border-radius:50%; background:var(--ink); }
+  .brand-text{font-family:Impact,'Arial Narrow',sans-serif; font-weight:700; font-size:22px; letter-spacing:3px; color:var(--brass-light); position:relative; z-index:1;}
+  .misthead .row{ position:absolute; bottom:10px; left:50%; transform:translateX(-50%); width:100%; max-width:900px;
+    display:flex; align-items:center; justify-content:space-between; padding:0 16px; z-index:2; }
+  .topbar-right{display:flex; align-items:center; gap:10px;}
+  .lang-toggle{display:flex; border:1px solid var(--brass); border-radius:20px; overflow:hidden;}
+  .lang-toggle button{background:transparent; border:none; color:var(--muted); padding:5px 13px; font-family:Arial,sans-serif; font-weight:700; font-size:11.5px; cursor:pointer;}
+  .lang-toggle button.active{background:var(--brass); color:#141726;}
+  .progress-pill{ font-family:'Courier New',monospace; font-size:11px; color:var(--paper); border:1px solid var(--navy2); background:rgba(35,40,71,.5); padding:5px 12px; border-radius:20px;}
+  .reset-btn{background:transparent;border:1px solid var(--navy2);color:var(--paper);border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;}
+
+  .card{ background:var(--paper); color:var(--text); border-radius:3px; padding:32px 30px 26px; box-shadow:var(--shadow); border:1px solid var(--navy2); position:relative; animation:fadeUp .45s ease; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .eyebrow{ font-family:Impact,'Arial Narrow',sans-serif; font-weight:700; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--rust); margin:0 0 10px; }
+  h1.t{ font-family:Impact,'Arial Narrow',sans-serif; font-weight:700; font-size:clamp(26px,4vw,34px); color:#141726; margin:0 0 16px; line-height:1.15; letter-spacing:1px; }
+  h2.t{ font-family:Impact,'Arial Narrow',sans-serif; font-weight:700; font-size:22px; color:#141726; margin:0 0 12px; letter-spacing:.5px; }
+  .body p{ font-family:Arial,sans-serif; font-size:16.5px; line-height:1.65; color:var(--text); margin:0 0 14px; }
+  .roomtag{ display:inline-block; font-family:Impact,'Arial Narrow',sans-serif; font-weight:700; font-size:11px; letter-spacing:.1em; color:var(--paper); background:#141726; padding:5px 14px; border-radius:2px; margin-bottom:12px; }
+  .puzzlebox{ border:1.6px solid #141726; border-radius:3px; padding:18px 20px; margin:16px 0; background:var(--paper2); }
+  .puzzlebox .lbl{ font-family:'Courier New',monospace; font-weight:700; font-size:10.5px; color:var(--rust); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .answer-row{ display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .answer-row input{ width:52px; height:52px; text-align:center; font-family:'Courier New',monospace; font-weight:700; font-size:20px; border:2px solid var(--text); border-radius:3px; background:#fff; color:var(--text); }
+  .btn{ background:var(--navy); color:var(--paper); border:1px solid var(--brass); border-radius:2px; padding:11px 18px; font-family:Impact,'Arial Narrow',sans-serif; font-weight:700; letter-spacing:.5px; font-size:13.5px; cursor:pointer; transition:.15s; }
+  .btn:hover{ background:var(--navy2); border-color:var(--brass-light); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.wide{ width:100%; }
+  .btn.ghost{ background:transparent; color:var(--navy); border:1px solid var(--navy); }
+  .feedback{ font-family:Arial,sans-serif; font-weight:700; font-size:13px; margin-top:10px; min-height:18px; }
+  .feedback.good{ color:#1f6b3a; }
+  .feedback.bad{ color:var(--rust); }
+  .hint-toggle{ margin-top:14px; }
+  .hint-body{ margin-top:10px; border:1.4px dashed var(--rust); border-radius:3px; padding:12px 14px; background:#e4dcc6; font-family:Arial,sans-serif; font-size:12.5px; color:#4a3a30; display:none; }
+  .hint-body.open{ display:block; }
+  .map-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:18px 0 8px; }
+  .room-card{ background:var(--navy); border:1px solid var(--brass); border-radius:3px; padding:16px 14px; text-align:center; cursor:pointer; transition:.15s; color:var(--paper); position:relative; }
+  .room-card:hover{ background:var(--navy2); border-color:var(--brass-light); }
+  .room-card .check{ position:absolute; top:8px; right:10px; color:var(--brass-light); font-size:14px; }
+  .room-card .name{ font-family:Impact,'Arial Narrow',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.3px; }
+  .dials{ display:flex; gap:14px; justify-content:center; margin:22px 0; }
+  .dial{ width:64px; height:64px; border:3px solid var(--text); border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'Courier New',monospace; font-weight:700; font-size:24px; background:#fff; color:var(--text); }
+  .dial.empty{ color:#bbb; }
+  .choices{ display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+  .stamp{ display:inline-block; border:3px solid var(--rust); color:var(--rust); font-family:Impact,'Arial Narrow',sans-serif; font-weight:700; letter-spacing:.1em; padding:8px 18px; transform:rotate(-4deg); border-radius:3px; margin:8px 0 18px; font-size:16px; }
+  .evline{ font-family:Arial,sans-serif; font-size:14.5px; line-height:1.5; margin:0 0 8px; padding-left:14px; border-left:2px solid var(--rust); color:#2e2a38; }
+  .dossier-meta{ font-family:'Courier New',monospace; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  @media (max-width:520px){ .card{padding:22px 18px 20px;} }
+  .card::before{
+    content:"13"; position:absolute; top:18px; right:24px; font-family:Impact,'Arial Narrow',sans-serif; font-weight:700;
+    font-size:15px; color:#141726; opacity:.08; z-index:0; pointer-events:none; letter-spacing:1px;
+  }
+  .card > *{ position:relative; z-index:1; }
+  .players{ font-family:'Courier New',monospace; font-size:12px; color:var(--muted); margin:0 0 6px; }
+</style>
+</head>
+<body>
+<div class="misthead">
+  <div class="holerow"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="row">
+    <div class="brand-text" id="brandLabel">VAULT 13</div>
+    <div class="topbar-right">
+      <div class="progress-pill" id="progressPill">·</div>
+      <button class="reset-btn" id="resetBtn" onclick="resetGame()">RESET</button>
+      <div class="lang-toggle">
+        <button id="btnEN" class="active" onclick="setLang('en')">EN</button>
+        <button id="btnTR" onclick="setLang('tr')">TR</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+const T = {
+  brand:{en:"VAULT 13", tr:"VAULT 13"},
+  begin:{en:"Open the File", tr:"Dosyayı Aç"},
+  cont:{en:"Continue", tr:"Devam Et"},
+  toMap:{en:"See the Vault Floor Plan", tr:"Kasa Katı Planını Gör"},
+  toRooms:{en:"Enter the Archive", tr:"Arşive Gir"},
+  checkBtn:{en:"Check", tr:"Kontrol Et"},
+  correct:{en:"Correct! Digit locked in.", tr:"Doğru! Rakam kilitlendi."},
+  wrong:{en:"Not quite — look again.", tr:"Tam değil — tekrar bak."},
+  showHint:{en:"🔍 Show Hint", tr:"🔍 İpucunu Göster"},
+  hideHint:{en:"Hide Hint", tr:"İpucunu Gizle"},
+  toVault:{en:"Go to the Vault Corridor", tr:"Kasa Koridoruna Git"},
+  needAll:{en:"Solve all six locations first.", tr:"Önce altı mekânı da çözün."},
+  enterCode:{en:"Turn the Dial", tr:"Kadranı Çevir"},
+  backHub:{en:"◂ Back to the Floor Plan", tr:"◂ Kat Planına Dön"},
+  playAgain:{en:"Reopen the File", tr:"Dosyayı Tekrar Aç"},
+  players:{en:"Team: 3–6 · Time: 45–75 min", tr:"Takım: 3–6 · Süre: 45–75 dakika"},
+  peopleBtn:{en:"Read the Suspect Files", tr:"Şüpheli Dosyalarını Oku"},
+  backPeople:{en:"◂ Back", tr:"◂ Geri"},
+  nextPerson:{en:"Next Suspect", tr:"Sonraki Şüpheli"},
+  toRoomsFromPeople:{en:"Continue to the Floor Plan", tr:"Kat Planına Devam Et"},
+  reset:{en:"RESET", tr:"SIFIRLA"},
+  resetConfirm:{en:"Reset all saved progress and start again?", tr:"Kaydedilmiş tüm ilerleme silinsin ve oyun yeniden başlatılsın mı?"},
+};
+
+const ROOM_META = [
+  {key:"security", icon:"🎞", en:"Security Desk", tr:"Güvenlik Masası"},
+  {key:"deposit", icon:"🗄", en:"Deposit Hall", tr:"Emanet Kasaları"},
+  {key:"records", icon:"📇", en:"Records Archive", tr:"Kayıt Arşivi"},
+  {key:"generator", icon:"⚡", en:"Generator Room", tr:"Jeneratör Odası"},
+  {key:"office", icon:"🗝", en:"Manager's Office", tr:"Müdür Odası"},
+  {key:"corridor", icon:"🔒", en:"Vault Corridor", tr:"Kasa Koridoru"},
+];
+
+const ROOMS = {
+  security:{ lock:"NQ==", title:{en:"Camera 4's Loop", tr:"Kamera 4'ün Döngüsü"},
+    flavor:{en:"Camera 4 repeats the same thirteen-minute loop. A punch card sits abandoned beside the console, five columns of holes in neat rows.",
+            tr:"Kamera 4 aynı on üç dakikalık kaydı tekrarlar. Konsolun yanında terk edilmiş bir delikli kart duruyor, beş sütun düzenli delik."},
+    puzzleLbl:{en:"Punch-Card Overlay", tr:"Delikli Kart Örtüşmesi"},
+    puzzleText:{en:"Overlay the five columns of the punch card onto the archive's numbered drawer rows. Which single drawer number do the holes NOT point to: 1, 3, 0, 7, 8, or 5?",
+                tr:"Delikli kartın beş sütununu arşivin numaralı çekmece sıralarının üzerine yerleştirin. Delikler şu numaralardan hangisine İŞARET ETMİYOR: 1, 3, 0, 7, 8 yoksa 5?"},
+    hint:{en:"The evidence board lists exactly five numbers the holes point to — 1, 3, 0, 7, 8. Whichever number is missing from that list is your answer.",
+          tr:"Kanıt panosu deliklerin işaret ettiği tam olarak beş numarayı listeler — 1, 3, 0, 7, 8. Bu listede olmayan sayı cevabınızdır."} },
+  deposit:{ lock:"OA==", title:{en:"The Fresh Graphite", tr:"Taze Grafit"},
+    flavor:{en:"Rows of brass deposit boxes disappear into the dark. One master key has fresh graphite on its teeth — someone used it recently. Boxes 1, 3, 0, 7 and 8 are circled in the ledger.",
+            tr:"Pirinç emanet kutuları karanlığa uzanır. Bir ana anahtarın dişlerinde taze grafit var — biri yakın zamanda kullanmış. Defterde 1, 3, 0, 7 ve 8 numaralı kutular daire içine alınmış."},
+    puzzleLbl:{en:"Read the Marked Boxes", tr:"İşaretli Kutuları Oku"},
+    puzzleText:{en:"Five boxes are circled: 1, 3, 0, 7, 8. Which circled box has the highest single-digit number?",
+                tr:"Beş kutu daire içine alınmış: 1, 3, 0, 7, 8. Daire içindeki kutulardan hangisi en büyük tek basamaklı numaraya sahip?"},
+    hint:{en:"Compare 1, 3, 0, 7 and 8. Choose the greatest digit.",
+          tr:"1, 3, 0, 7 ve 8'i karşılaştırın. En büyük rakamı seçin."} },
+  records:{ lock:"MA==", title:{en:"The Number That Never Earns Interest", tr:"Faiz Kazanmayan Sayı"},
+    flavor:{en:"A torn memo reads: \u2018Start with the number that never earns interest.\u2019 Ledger totals in the margin convert into letters if you let them.",
+            tr:"Yırtık bir not: \u2018Faiz kazanmayan sayıdan başla.\u2019 Kenardaki defter toplamları, izin verirseniz harflere dönüşür."},
+    puzzleLbl:{en:"What Never Earns Interest?", tr:"Faiz Kazanmayan Nedir?"},
+    puzzleText:{en:"In any bank ledger, which single digit represents an account that has earned nothing at all — the digit for \u2018zero\u2019 balance?",
+                tr:"Herhangi bir banka defterinde, hiçbir şey kazanmamış bir hesabı temsil eden tek rakam hangisidir — \u2018sıfır\u2019 bakiyenin rakamı?"},
+    hint:{en:"The torn line points toward zero. That is your digit.", tr:"Yırtık satır sıfırı işaret ediyor. Rakamınız bu."} },
+  generator:{ lock:"NA==", title:{en:"The Safe Breaker Path", tr:"Güvenli Devre Yolu"},
+    flavor:{en:"Six breakers are marked I, II, III, V, VIII and XIII. Adjacent red circuits cannot run together, and a brass token slot hides behind XIII.",
+            tr:"Altı kesici I, II, III, V, VIII ve XIII olarak işaretli. Yan yana kırmızı devreler birlikte çalışamaz ve XIII'ün arkasında pirinç bir jeton yuvası saklı."},
+    puzzleLbl:{en:"Breaker Sequence", tr:"Kesici Sırası"},
+    puzzleText:{en:"The safe path restores power using breakers I, II, V and XIII, in that order — skipping III and VIII entirely. How many breakers make up the safe path?",
+                tr:"Güvenli yol, sırasıyla I, II, V ve XIII kesicilerini kullanarak gücü geri getirir — III ve VIII tamamen atlanır. Güvenli yol kaç kesiciden oluşur?"},
+    hint:{en:"Count them: I, II, V, XIII. That's how many.", tr:"Sayın: I, II, V, XIII. İşte bu kadar."} },
+  office:{ lock:"Mw==", title:{en:"The Missing Floor", tr:"Kayıp Kat"},
+    flavor:{en:"Under ultraviolet light, a note appears on the desk calendar: \u2018The missing floor comes before the year.\u2019 The public elevator conspicuously skips floor 13.",
+            tr:"UV ışık altında masa takviminde bir not beliriyor: \u2018Kayıp kat yıldan önce gelir.\u2019 Halka açık asansör göze batacak şekilde 13. katı atlıyor."},
+    puzzleLbl:{en:"Which Floor Is Missing?", tr:"Hangi Kat Kayıp?"},
+    puzzleText:{en:"The elevator skips floor 13. For this lock, enter the digit in the ones place of that missing floor number.",
+                tr:"Asansör 13. katı atlıyor. Bu kilit için kayıp kat numarasının birler basamağındaki rakamı girin."},
+    hint:{en:"Floor 13 ends in which digit?", tr:"13. kat hangi rakamla biter?"} },
+  corridor:{ lock:"NA==", title:{en:"Three Rotating Rings", tr:"Üç Döner Halka"},
+    flavor:{en:"Three rotating rings surround the mechanical dial: KEY \u2013 EYE \u2013 ZERO \u2013 LIGHTNING \u2013 13. The purge timer keeps counting down, even without power.",
+            tr:"Mekanik kadranı üç döner halka çevreliyor: ANAHTAR \u2013 GÖZ \u2013 SIFIR \u2013 ŞİMŞEK \u2013 13. İmha sayacı, elektrik olmasa bile geri saymaya devam ediyor."},
+    puzzleLbl:{en:"Count the Symbols", tr:"Sembolleri Say"},
+    puzzleText:{en:"Five symbols circle the dial: KEY, EYE, ZERO, LIGHTNING, 13. If you remove the one that is a number rather than a picture, how many picture-symbols are left?",
+                tr:"Kadranın etrafında beş sembol var: ANAHTAR, GÖZ, SIFIR, ŞİMŞEK, 13. Resim değil de sayı olanı çıkarırsanız, geriye kaç resim-sembol kalır?"},
+    hint:{en:"Five symbols total, minus the one number (13), leaves how many pictures?", tr:"Toplam beş sembol, bir sayıyı (13) çıkarınca geriye kaç resim kalır?"} }
+};
+const ROOM_ORDER = ["security","deposit","records","generator","office","corridor"];
+
+const PEOPLE = [
+  {name:"NORA FINCH", role:{en:"Night Manager", tr:"Gece Müdürü"},
+   motive:{en:"Knows the old emergency system.", tr:"Eski acil sistemi biliyor."},
+   alibi:{en:"Locked upstairs during the blackout.", tr:"Kesinti sırasında üst katta kilitli."}},
+  {name:"CAL MERCER", role:{en:"Security Chief", tr:"Güvenlik Şefi"},
+   motive:{en:"Installed the camera loop.", tr:"Kamera döngüsünü kurdu."},
+   alibi:{en:"Off-site at a police interview.", tr:"Polis görüşmesi için bina dışında."}},
+  {name:"EDDIE SHAW", role:{en:"Electrician", tr:"Elektrikçi"},
+   motive:{en:"Serviced breaker XIII.", tr:"XIII kesicisine bakım yaptı."},
+   alibi:{en:"Signed out before the blackout.", tr:"Kesintiden önce çıkış yaptı."}},
+  {name:"JUNE PARK", role:{en:"Records Clerk", tr:"Arşiv Görevlisi"},
+   motive:{en:"Created the ledger index.", tr:"Defter indeksini hazırladı."},
+   alibi:{en:"Seen leaving at 11:15.", tr:"23:15'te çıkarken görüldü."}}
+];
+
+const STORAGE_KEY = "vault-13-progress-v2";
+function freshState(){ return { lang:"en", screen:"cover", personIdx:0, digits:{security:null,deposit:null,records:null,generator:null,office:null,corridor:null}, hints:{} }; }
+function loadState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(!saved || !["en","tr"].includes(saved.lang) || typeof saved.digits!=="object") return freshState();
+    const base = freshState();
+    return {...base,...saved,digits:{...base.digits,...saved.digits},hints:{...saved.hints}};
+  }catch(_){ return freshState(); }
+}
+let STATE = loadState();
+function saveState(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }catch(_){} }
+function answerFor(key){ return atob(ROOMS[key].lock); }
+
+function L(obj){ return obj[STATE.lang]; }
+function setLang(l){
+  STATE.lang = l;
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnTR').classList.toggle('active', l==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  document.getElementById('resetBtn').textContent = L(T.reset);
+  saveState();
+  render();
+}
+function go(screen){ STATE.screen = screen; saveState(); window.scrollTo({top:0,behavior:'smooth'}); render(); }
+function allSolved(){ return Object.values(STATE.digits).every(d=>d!==null); }
+function codeString(){ return ROOM_ORDER.map(k=>STATE.digits[k]).join(""); }
+
+function checkDigit(key){
+  const input = document.getElementById('input_'+key);
+  const fb = document.getElementById('fb_'+key);
+  const val = (input.value||"").trim();
+  if(val === answerFor(key)){
+    STATE.digits[key] = val;
+    fb.textContent = L(T.correct); fb.className = "feedback good"; input.disabled = true;
+    document.getElementById('checkbtn_'+key).disabled = true;
+    saveState();
+  } else {
+    fb.textContent = L(T.wrong); fb.className = "feedback bad";
+  }
+}
+function toggleHint(key){
+  STATE.hints[key] = !STATE.hints[key];
+  document.getElementById('hint_'+key).classList.toggle('open', STATE.hints[key]);
+  document.getElementById('hintbtn_'+key).textContent = STATE.hints[key] ? L(T.hideHint) : L(T.showHint);
+  saveState();
+}
+function nextPerson(delta){ STATE.personIdx = Math.max(0,Math.min(PEOPLE.length-1,STATE.personIdx+delta)); saveState(); render(); }
+function restartGame(){ const lang=STATE.lang; STATE=freshState(); STATE.lang=lang; saveState(); render(); window.scrollTo({top:0,behavior:'smooth'}); }
+function resetGame(){ if(confirm(L(T.resetConfirm))){ localStorage.removeItem(STORAGE_KEY); STATE=freshState(); setLang(STATE.lang); } }
+function checkVault(){
+  const boxes = ['v1','v2','v3','v4','v5','v6'].map(id=>document.getElementById(id).value.trim());
+  go(boxes.join("") === codeString() ? 'solved' : 'continues');
+}
+function updateProgressPill(){
+  const pill = document.getElementById('progressPill');
+  if(pill) pill.textContent = Object.values(STATE.digits).filter(d=>d!==null).length + " / 6";
+}
+
+function renderCover(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'EMERGENCY FILE 13':'ACİL DURUM DOSYASI 13'}</p>
+    <h1 class="t">${STATE.lang==='en'?'Vault 13':'Vault 13'}</h1>
+    <p class="players">${L(T.players)}</p>
+    <div class="body"><p>${STATE.lang==='en'
+      ?'New York, 1978. A citywide blackout seals you inside Meridian Bank\u2019s underground archive. A mechanical voice announces: \u201cVault purge in sixty minutes.\u201d'
+      :'New York, 1978. Şehir çapındaki elektrik kesintisi sizi Meridian Bank\u2019ın yeraltı arşivinde kilitli bırakır. Mekanik bir ses duyulur: \u201cKasa imhasına altmış dakika.\u201d'}</p></div>
+    <div class="choices"><button class="btn wide" onclick="go('brief')">${L(T.begin)}</button></div>
+  </div>`;
+}
+function renderBrief(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'MISSION BRIEF':'GÖREV ÖZETİ'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Six Linked Locks':'Altı Bağlantılı Kilit'}</h2>
+    <div class="body">
+      <p>${STATE.lang==='en'
+        ?'The emergency binder is missing three pages. Six linked locks stand between you and the only service exit. Restore the circuit, find the emergency token and crack Vault 13 before the timer runs out.'
+        :'Acil durum klasörünün üç sayfası kayıp. Tek servis çıkışına ulaşmak için altı bağlantılı kilit var. Devreyi onarın, acil durum jetonunu bulun ve sayaç bitmeden Vault 13\u2019ü açın.'}</p>
+      <div class="evline">${STATE.lang==='en'?'Read every scene, compare the four suspect files, solve each location and commit to one theory before you open the vault.':'Her sahneyi okuyun, dört şüpheli dosyasını karşılaştırın, her mekânı çözün ve kasayı açmadan önce tek bir teoriye karar verin.'}</div>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('people')">${L(T.peopleBtn)}</button></div>
+  </div>`;
+}
+function renderPeople(){
+  const p = PEOPLE[STATE.personIdx];
+  const isLast = STATE.personIdx === PEOPLE.length - 1;
+  return `<div class="card">
+    <div class="roomtag">${STATE.lang==='en'?'PERSON':'KİŞİ DOSYASI'} ${STATE.personIdx+1} / ${PEOPLE.length}</div>
+    <h2 class="t">${p.name}</h2>
+    <div class="dossier-meta">${L(p.role)}</div>
+    <div class="body">
+      <p><strong>${STATE.lang==='en'?'Motive / Connection:':'Bağlantı / Motiv:'}</strong> ${L(p.motive)}</p>
+      <p><strong>${STATE.lang==='en'?'Alibi / Access:':'Alibi / Erişim:'}</strong> ${L(p.alibi)}</p>
+    </div>
+    <div class="evline">${STATE.lang==='en'?'What does this person know that the others do not?':'Bu kişinin bildiği özel şey ne?'}</div>
+    <div class="choices">
+      ${isLast
+        ? `<button class="btn wide" onclick="go('map')">${L(T.toRoomsFromPeople)}</button>`
+        : `<button class="btn wide" onclick="nextPerson(1)">${L(T.nextPerson)}</button>`}
+      ${STATE.personIdx>0 ? `<button class="btn ghost wide" onclick="nextPerson(-1)">${L(T.backPeople)}</button>` : ``}
+    </div>
+  </div>`;
+}
+function renderMap(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'MERIDIAN BANK · SUB-LEVEL 3':'MERIDIAN BANK · ALT KAT 3'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Six Locations':'Altı Mekân'}</h2>
+    <div class="map-grid">
+      ${ROOM_META.map(r=>`<div class="room-card" onclick="go('${r.key}')">${STATE.digits[r.key]?'<span class="check">✓</span>':''}<div style="font-size:24px;">${r.icon}</div><div class="name">${r[STATE.lang]}</div></div>`).join("")}
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('vault')">${L(T.toVault)}</button></div>
+  </div>`;
+}
+function renderRoom(key){
+  const r = ROOMS[key];
+  const solved = STATE.digits[key] !== null;
+  return `<div class="card">
+    <span class="roomtag">${ROOM_META.find(m=>m.key===key)[STATE.lang]}</span>
+    <h2 class="t">${r.title[STATE.lang]}</h2>
+    <div class="body"><p>${r.flavor[STATE.lang]}</p></div>
+    <div class="puzzlebox">
+      <div class="lbl">${r.puzzleLbl[STATE.lang]}</div>
+      <p style="font-family:Arial,sans-serif; font-size:15px; margin:0;">${r.puzzleText[STATE.lang]}</p>
+    </div>
+    <div class="answer-row">
+      <input id="input_${key}" aria-label="${STATE.lang==='en'?'Answer digit':'Cevap rakamı'}" maxlength="1" inputmode="numeric" onkeydown="if(event.key==='Enter')checkDigit('${key}')" ${solved?'disabled value="'+STATE.digits[key]+'"':''} placeholder="?">
+      <button class="btn" id="checkbtn_${key}" onclick="checkDigit('${key}')" ${solved?'disabled':''}>${L(T.checkBtn)}</button>
+      <span class="feedback ${solved?'good':''}" id="fb_${key}">${solved?L(T.correct):''}</span>
+    </div>
+    <div class="hint-toggle">
+      <button class="btn ghost" id="hintbtn_${key}" onclick="toggleHint('${key}')">${STATE.hints[key]?L(T.hideHint):L(T.showHint)}</button>
+      <div class="hint-body ${STATE.hints[key]?'open':''}" id="hint_${key}">${r.hint[STATE.lang]}</div>
+    </div>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderVault(){
+  const ready = allSolved();
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'THE VAULT CORRIDOR':'KASA KORİDORU'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Turn the Mechanical Dial':'Mekanik Kadranı Çevir'}</h2>
+    <div class="body"><p>${STATE.lang==='en'?'A brass plaque reads: \u201cSix locks, one truth. Enter the code to stop the purge.\u201d':'Pirinç bir levha: \u201cAltı kilit, tek gerçek. İmhayı durdurmak için kodu gir.\u201d'}</p></div>
+    <div class="dials">${ROOM_ORDER.map(k=>`<div class="dial ${STATE.digits[k]?'':'empty'}">${STATE.digits[k]||'?'}</div>`).join("")}</div>
+    ${ready?`
+    <div class="answer-row" style="justify-content:center; flex-wrap:wrap;">
+      <input id="v1" maxlength="1" inputmode="numeric" placeholder="?">
+      <input id="v2" maxlength="1" inputmode="numeric" placeholder="?">
+      <input id="v3" maxlength="1" inputmode="numeric" placeholder="?">
+      <input id="v4" maxlength="1" inputmode="numeric" placeholder="?">
+      <input id="v5" maxlength="1" inputmode="numeric" placeholder="?">
+      <input id="v6" maxlength="1" inputmode="numeric" placeholder="?">
+    </div>
+    <div class="choices"><button class="btn wide" onclick="checkVault()">${L(T.enterCode)}</button></div>`
+    : `<p style="text-align:center; font-family:Impact,'Arial Narrow',sans-serif; font-weight:700; color:var(--muted); letter-spacing:.5px;">${L(T.needAll)}</p>`}
+    <div class="choices"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderSolved(){
+  return `<div class="card">
+    <div class="stamp">${STATE.lang==='en'?'Case Closed':'Dosya Kapandı'}</div>
+    <div class="body"><p>${STATE.lang==='en'
+      ?'The purge stops with four seconds on the clock. The service door slides open. Insert the emergency token from behind breaker XIII, align KEY\u2013EYE\u2013ZERO, and the drawer clicks free: the apparent sabotage was only an obsolete emergency protocol, triggered by the blackout.'
+      :'İmha, sayaçta dört saniye kalmışken durur. Servis kapısı kayarak açılır. XIII kesicisinin arkasından acil jetonu alın, ANAHTAR\u2013GÖZ\u2013SIFIR\u2019u hizalayın ve çekmece tıkırdayarak açılır: sabotaj gibi görünen olay, elektrik kesintisinin tetiklediği eski bir acil durum protokolünden ibaretti.'}</p></div>
+    <div class="choices"><button class="btn wide" onclick="restartGame()">${L(T.playAgain)}</button></div>
+  </div>`;
+}
+function renderContinues(){
+  return `<div class="card">
+    <div class="stamp" style="border-color:var(--muted); color:var(--muted);">${STATE.lang==='en'?'Not Yet':'Henüz Değil'}</div>
+    <div class="body"><p>${STATE.lang==='en'
+      ?"The dial resists. Somewhere below, the timer keeps counting. Check your six digits against the room order — security, deposit, records, generator, office, corridor."
+      :"Kadran direniyor. Aşağıda bir yerde sayaç saymaya devam ediyor. Altı rakamınızı oda sırasına göre kontrol edin — güvenlik, emanet, kayıt, jeneratör, müdür odası, koridor."}</p></div>
+    <div class="choices">
+      <button class="btn wide" onclick="go('vault')">${STATE.lang==='en'?'Try Again':'Tekrar Dene'}</button>
+      <button class="btn ghost wide" onclick="restartGame()">${L(T.playAgain)}</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  let html = "";
+  if(STATE.screen==='cover') html = renderCover();
+  else if(STATE.screen==='brief') html = renderBrief();
+  else if(STATE.screen==='people') html = renderPeople();
+  else if(STATE.screen==='map') html = renderMap();
+  else if(ROOM_ORDER.includes(STATE.screen)) html = renderRoom(STATE.screen);
+  else if(STATE.screen==='vault') html = renderVault();
+  else if(STATE.screen==='solved') html = renderSolved();
+  else if(STATE.screen==='continues') html = renderContinues();
+  app.innerHTML = html;
+  document.getElementById('btnEN').classList.toggle('active', STATE.lang==='en');
+  document.getElementById('btnTR').classList.toggle('active', STATE.lang==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  document.getElementById('resetBtn').textContent = L(T.reset);
+  updateProgressPill();
+}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Date Night Box - Digital Companion</title>
+<style>
+  :root{
+    --ink:#2a1c1e; --ink2:#3a2528; --rose:#c9707c; --rose-light:#e8a3ac;
+    --terracotta:#c6753f; --sage:#6f9468; --plum:#8a5a8f;
+    --paper:#fbf1ea; --paper2:#f3e3d6; --text:#2e2018; --muted:#8a7568;
+    --shadow:0 18px 42px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;min-height:100%;-webkit-text-size-adjust:100%;}
+  body{ background:var(--ink); color:var(--paper); font-family:Arial,Helvetica,sans-serif; min-height:100vh; min-height:100dvh; overflow-x:hidden; }
+  #app{max-width:900px; margin:0 auto; padding:0 16px calc(60px + env(safe-area-inset-bottom));}
+
+  .warmhead{ position:relative; height:80px; overflow:hidden; margin-bottom:20px;
+    background:radial-gradient(ellipse at 50% 130%, #402a2c 0%, var(--ink) 75%);
+    border-bottom:1px solid rgba(232,163,172,.3); display:flex; align-items:center; justify-content:center;
+  }
+  .glow{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:100px; height:100px; border-radius:50%;
+    background:radial-gradient(circle, rgba(232,163,172,.35) 0%, transparent 70%); animation:pulse 3.4s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{opacity:.6; transform:translate(-50%,-50%) scale(1);} 50%{opacity:1; transform:translate(-50%,-50%) scale(1.12);} }
+  .brand-text{ font-family:Georgia,'Times New Roman',serif; font-weight:800; font-style:italic; font-size:22px; color:var(--rose-light); position:relative; z-index:1; }
+  .topbar-corner{ position:absolute; top:16px; display:flex; align-items:center; gap:10px; z-index:2; }
+  .topbar-corner.left{ left:16px; } .topbar-corner.right{ right:16px; }
+  .lang-toggle{ display:flex; border:1px solid var(--rose); border-radius:20px; overflow:hidden; }
+  .lang-toggle button{ background:transparent; border:none; color:var(--rose-light); padding:7px 13px; font-family:Arial,Helvetica,sans-serif; font-weight:700; font-size:11.5px; cursor:pointer; }
+  .lang-toggle button.active{ background:var(--rose); color:#2a1214; }
+  .progress-pill{ font-family:Arial,Helvetica,sans-serif; font-weight:700; font-size:11px; color:var(--paper); border:1px solid var(--rose); background:rgba(201,112,124,.2); padding:6px 12px; border-radius:20px; }
+
+  .card{ background:var(--paper); color:var(--text); border-radius:14px; padding:32px 30px 26px; box-shadow:var(--shadow); border:2px solid var(--rose); position:relative; animation:fadeUp .4s ease; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .eyebrow{ font-family:Arial,Helvetica,sans-serif; font-weight:700; font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--terracotta); margin:0 0 10px; }
+  h1.t{ font-family:Georgia,'Times New Roman',serif; font-weight:800; font-style:italic; font-size:clamp(26px,4.4vw,34px); color:#2a1214; margin:0 0 14px; }
+  h2.t{ font-family:Georgia,'Times New Roman',serif; font-weight:800; font-style:italic; font-size:23px; color:#2a1214; margin:0 0 12px; }
+  .body p{ font-family:Arial,Helvetica,sans-serif; font-size:15.5px; line-height:1.65; color:var(--text); margin:0 0 12px; }
+  .btn{ appearance:none; -webkit-appearance:none; touch-action:manipulation; -webkit-tap-highlight-color:transparent; background:var(--ink); color:var(--paper); border:1px solid var(--rose); border-radius:10px; padding:13px 18px; min-height:46px; font-family:Arial,Helvetica,sans-serif; font-weight:700; font-size:14px; cursor:pointer; transition:.15s; }
+  .btn:hover{ background:var(--rose); border-color:var(--rose-light); }
+  .btn.wide{ width:100%; }
+  .btn.ghost{ background:transparent; color:var(--ink); border:1px solid var(--ink); }
+  .choices{ display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+
+  .catgrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:18px 0; }
+  .catcard{ appearance:none; -webkit-appearance:none; touch-action:manipulation; -webkit-tap-highlight-color:transparent; width:100%; border-radius:14px; padding:20px 14px; text-align:center; cursor:pointer; transition:.15s; border:2px solid; color:#fff; font-family:Georgia,'Times New Roman',serif; font-weight:800; font-style:italic; font-size:17px; }
+  .catcard:hover{ transform:translateY(-2px); }
+  .catcard .icon{ font-size:26px; display:block; margin-bottom:6px; }
+  .catcard.romantic{ background:var(--rose); border-color:var(--rose-light); }
+  .catcard.adventurous{ background:var(--terracotta); border-color:#e3a875; }
+  .catcard.cozy{ background:var(--sage); border-color:#a3c49b; }
+  .catcard.budget{ background:var(--plum); border-color:#c0a0c5; }
+  .catcard.convo{ background:var(--ink2); border-color:var(--rose); grid-column:span 2; }
+
+  .cardflip{ perspective:1000px; margin:20px 0; }
+  .cardflip-inner{ position:relative; width:100%; min-height:170px; transition:transform .5s; transform-style:preserve-3d; -webkit-transform-style:preserve-3d; }
+  .cardflip.flipped .cardflip-inner{ transform:rotateY(180deg); -webkit-transform:rotateY(180deg); }
+  .cf-face{ position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; border-radius:14px; padding:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; border:2px solid; }
+  .cf-front{ appearance:none; width:100%; background:var(--ink2); color:var(--rose-light); font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:22px; cursor:pointer; border-color:var(--rose); }
+  .cf-back{ transform:rotateY(180deg); -webkit-transform:rotateY(180deg); background:var(--paper2); }
+  .cf-icon{ font-size:24px; margin-bottom:10px; }
+  .cf-prompt{ font-family:Arial,Helvetica,sans-serif; font-weight:600; font-size:17px; line-height:1.55; color:var(--text); }
+  .language-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px; }
+  .language-choice{ min-height:112px; font-size:18px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; }
+  .language-choice small{ font-size:12px; opacity:.78; font-weight:500; }
+  .feature-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 0 4px; }
+  .feature{ border:1px solid rgba(138,90,143,.35); background:#fffaf6; border-radius:11px; padding:12px 8px; text-align:center; color:var(--ink); font-size:12px; font-weight:700; line-height:1.35; }
+  .feature span{ display:block; font-size:20px; margin-bottom:5px; }
+  .deck-actions{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .legal-note{ margin-top:18px; padding-top:14px; border-top:1px solid rgba(138,117,104,.3); color:var(--muted); font-size:11.5px; line-height:1.5; }
+  button:focus-visible{ outline:3px solid #f3bd85; outline-offset:3px; }
+  @media (max-width:640px){
+    #app{padding:0 12px calc(42px + env(safe-area-inset-bottom));}
+    .warmhead{height:112px; align-items:flex-start; padding-top:18px;}
+    .brand-text{font-size:20px;}
+    .topbar-corner{top:62px;}
+    .topbar-corner.left{left:12px;} .topbar-corner.right{right:12px;}
+    .card{padding:24px 18px 20px;}
+    .language-grid,.catgrid,.feature-row,.deck-actions{grid-template-columns:1fr;}
+    .catcard.convo{grid-column:span 1;}
+    .language-choice{min-height:86px;}
+    .cf-prompt{font-size:16px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
+  }
+</style>
+</head>
+<body>
+<div class="warmhead">
+  <div class="glow"></div>
+  <div class="topbar-corner left"><div class="progress-pill" id="progressPill">·</div></div>
+  <div class="brand-text" id="brandLabel">Date Night Box · Date Night Kutusu</div>
+  <div class="topbar-corner right">
+    <div class="lang-toggle">
+      <button id="btnEN" onclick="setLang('en')">EN</button>
+      <button id="btnTR" onclick="setLang('tr')">TR</button>
+    </div>
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+const T = {
+  brand:{en:"Date Night Box", tr:"Date Night Kutusu"},
+  chooseLanguage:{en:"Choose Your Language", tr:"Dilini Seç"},
+  playEnglish:{en:"Play in English", tr:"İngilizce oyna"},
+  playTurkish:{en:"Play in Turkish", tr:"Türkçe oyna"},
+  begin:{en:"Open the Box", tr:"Kutuyu Aç"},
+  cont:{en:"Continue", tr:"Devam Et"},
+  hubTitle:{en:"Pick a Deck", tr:"Bir Deste Seç"},
+  hubHint:{en:"Choose a theme, or let fate decide.", tr:"Bir tema seçin, ya da kaderin karar vermesine izin verin."},
+  drawCard:{en:"Draw a Card", tr:"Bir Kart Çek"},
+  tapReveal:{en:"Tap to reveal", tr:"Açmak için dokun"},
+  drawAnother:{en:"Draw Another", tr:"Bir Tane Daha Çek"},
+  back:{en:"◂ Back to Decks", tr:"◂ Destelere Dön"},
+  drawn:{en:"unique cards drawn", tr:"farklı kart çekildi"},
+  surprise:{en:"Surprise Me", tr:"Beni Şaşırt"},
+  reset:{en:"Reset All Decks", tr:"Tüm Desteleri Sıfırla"},
+  noRepeat:{en:"Cards will not repeat until this deck is complete.", tr:"Bu deste tamamlanana kadar kartlar tekrarlanmaz."},
+};
+
+const CATS = {
+  romantic:{ icon:"♥", en:"Romantic", tr:"Romantik", cls:"romantic",
+    cards:[
+      {en:"Write letters imagining your life together 20 years from now. Seal them without reading.", tr:"Birlikte 20 yıl sonraki hayatınızı hayal ederek mektuplar yazın. Okumadan zarfa koyun."},
+      {en:"Take a short moonlit walk and invent names for the stars.", tr:"Ay ışığında kısa bir yürüyüşe çıkın ve yıldızlara isimler uydurun."},
+      {en:"Recreate the day you first met, moment by moment.", tr:"İlk tanıştığınız günü adım adım yeniden canlandırın."},
+      {en:'For 5 minutes, try to say "I love you" using only gestures.', tr:'5 dakika boyunca yalnızca jestlerle "seni seviyorum" demeye çalışın.'},
+      {en:"Have coffee by candlelight on the balcony or beside a window - phones off.", tr:"Balkonda veya pencere kenarında mum ışığında kahve için - telefonlar kapalı."},
+      {en:"Tell each other three things you love about one another, and save the recording.", tr:"Birbirinizde sevdiğiniz üç şeyi söyleyin ve bu anı kaydedin."},
+      {en:"Play a favorite song and slow-dance in the living room.", tr:"Sevdiğiniz bir şarkıyı açın ve salonda yavaşça dans edin."},
+      {en:"Make a vision board together for a shared future dream.", tr:"Ortak bir gelecek hayaliniz için birlikte vizyon panosu hazırlayın."},
+      {en:"Write each other a handwritten love note and mail it.", tr:"Birbirinize el yazısıyla sevgi notu yazın ve postayla gönderin."},
+      {en:"Open your photo album and retell your 5 favorite memories.", tr:"Fotoğraf albümünüzü açın ve en sevdiğiniz 5 anıyı yeniden anlatın."},
+      {en:"Watch the sunrise or sunset together.", tr:"Güneşin doğuşunu veya batışını birlikte izleyin."},
+      {en:"Prepare surprise date invitations for each other - keep the details secret.", tr:"Birbirinize sürpriz randevu davetleri hazırlayın - ayrıntıları gizli tutun."},
+    ]},
+  adventurous:{ icon:"●", en:"Adventurous", tr:"Maceracı", cls:"adventurous",
+    cards:[
+      {en:"Explore a neighborhood you have never visited and stop at a café that catches your eye.", tr:"Daha önce gitmediğiniz bir mahalleyi keşfedin ve gözünüze çarpan bir kafeye uğrayın."},
+      {en:"Try a new sport together, such as climbing, archery, or a dance class.", tr:"Tırmanış, okçuluk veya dans dersi gibi yeni bir sporu birlikte deneyin."},
+      {en:"Choose an unfamiliar day-trip route and explore it together.", tr:"Bilmediğiniz bir günübirlik rota seçin ve birlikte keşfedin."},
+      {en:"Visit an escape room and solve the puzzles as a team.", tr:"Bir kaçış odasına gidin ve bulmacaları ekip olarak çözün."},
+      {en:"Try a restaurant experience that is completely new to both of you.", tr:"İkiniz için de tamamen yeni bir restoran deneyimi seçin."},
+      {en:"Explore a cycling or walking route you have never tried before.", tr:"Daha önce denemediğiniz bir bisiklet veya yürüyüş rotasını keşfedin."},
+      {en:"Set up a cozy night camp - a safe backyard or balcony counts too.", tr:"Güvenli bir yerde gece kampı kurun - bahçe veya balkon da olur."},
+      {en:"Try a dish from a cuisine neither of you knows well.", tr:"İkinizin de pek bilmediği bir mutfaktan yemek deneyin."},
+      {en:"Spend a few hours phone-free and navigate with a paper map.", tr:"Birkaç saat telefonsuz kalın ve kâğıt haritayla yolunuzu bulun."},
+      {en:"Visit a scenic viewpoint and take in the city together.", tr:"Manzaralı bir noktaya gidin ve şehri birlikte seyredin."},
+      {en:"Visit a night market or an outdoor event.", tr:"Bir gece pazarına veya açık hava etkinliğine gidin."},
+      {en:"Choose a nearby stop at random, then explore the area safely together.", tr:"Yakındaki bir durağı kura ile seçin ve çevresini güvenli biçimde birlikte keşfedin."},
+    ]},
+  cozy:{ icon:"♦", en:"Cozy at Home", tr:"Evde & Rahat", cls:"cozy",
+    cards:[
+      {en:'Try a new recipe together and be the evening\'s "chefs."', tr:'Birlikte yeni bir tarif deneyin ve gecenin "şefleri" olun.'},
+      {en:"Watch a movie neither of you has seen but both want to try.", tr:"İkinizin de daha önce izlemediği fakat merak ettiği bir filmi seçin."},
+      {en:"Build a blanket fort and have a movie night inside it.", tr:"Battaniyelerden bir kale kurun ve içinde film gecesi yapın."},
+      {en:"Learn a simple massage technique and take turns trying it.", tr:"Basit bir masaj tekniği öğrenin ve sırayla deneyin."},
+      {en:"Look through old photos or messages together and laugh.", tr:"Eski fotoğraflara veya mesajlara birlikte bakıp gülün."},
+      {en:"Complete a jigsaw puzzle together without talking - just play music.", tr:"Bir yapbozu konuşmadan, yalnızca müzik eşliğinde birlikte tamamlayın."},
+      {en:"Invent your own cocktail or alcohol-free mocktail recipe.", tr:"Kendi kokteyl veya alkolsüz kokteyl tarifinizi oluşturun."},
+      {en:'Take a 20-question "how well do we know each other?" quiz.', tr:'20 soruluk "Birbirimizi ne kadar tanıyoruz?" testi yapın.'},
+      {en:"Have a home spa day with face masks, candles, and calm music.", tr:"Yüz maskeleri, mumlar ve sakin müzikle evde spa günü yapın."},
+      {en:"Read a book aloud together, taking turns by chapter.", tr:"Bir kitabı sesli okuyun ve bölümleri sırayla paylaşın."},
+      {en:"Learn a new board game and hold a friendly tournament.", tr:"Yeni bir masa oyunu öğrenin ve dostça bir turnuva düzenleyin."},
+      {en:'Put on a playful "fashion show" with forgotten clothes from your closet.', tr:'Dolabınızda unuttuğunuz kıyafetlerle eğlenceli bir "moda şovu" yapın.'},
+    ]},
+  budget:{ icon:"◆", en:"Budget-Friendly", tr:"Bütçe Dostu", cls:"budget",
+    cards:[
+      {en:"Prepare food at home and have a picnic in the park.", tr:"Yiyecekleri evde hazırlayın ve parkta piknik yapın."},
+      {en:"Find a free museum or exhibition day and visit together.", tr:"Ücretsiz bir müze veya sergi günü bulun ve birlikte gidin."},
+      {en:"Visit the library and recommend books to each other.", tr:"Kütüphaneye gidin ve birbirinize kitap önerin."},
+      {en:"Find your favorite free spot to watch the sunset.", tr:"Gün batımını izlemek için ücretsiz ve güzel bir yer bulun."},
+      {en:"Invent a new game using an old deck of playing cards.", tr:"Eski bir iskambil destesiyle yeni bir oyun oluşturun."},
+      {en:"Explore a nearby neighborhood on foot and share an affordable treat.", tr:"Yakın bir mahalleyi yürüyerek keşfedin ve uygun fiyatlı bir lezzeti paylaşın."},
+      {en:"Record voice letters for each other.", tr:"Birbiriniz için sesli mektuplar kaydedin."},
+      {en:'Host a "restaurant night" at home with a menu, table setting, and dress code.', tr:'Evde menü, masa düzeni ve kıyafet kuralıyla bir "restoran gecesi" düzenleyin.'},
+      {en:"Find a free concert or community event and attend together.", tr:"Ücretsiz bir konser veya etkinlik bulun ve birlikte katılın."},
+      {en:"Choose a safe nearby spot for a stargazing evening.", tr:"Yıldızları izlemek için güvenli ve yakın bir yer seçin."},
+      {en:"Browse a secondhand bookshop and choose books for each other.", tr:"İkinci el bir kitapçıya gidin ve birbiriniz için kitap seçin."},
+      {en:"Create a mini photoshoot at home using items you already own.", tr:"Evdeki eşyaları kullanarak mini bir fotoğraf çekimi yapın."},
+    ]},
+  convo:{ icon:"?", en:"Conversation Starters", tr:"Sohbet Başlatıcılar", cls:"convo",
+    cards:[
+      {en:"What is the funniest moment we have shared?", tr:"Birlikte yaşadığımız en komik an hangisiydi?"},
+      {en:"Where would you like us to be one year from now?", tr:"Bir yıl sonra bizi nerede görmek isterdin?"},
+      {en:"Which of my habits always makes you smile?", tr:"Hangi alışkanlığım seni her zaman gülümsetiyor?"},
+      {en:"What were you thinking when we first met?", tr:"İlk tanıştığımızda aklından neler geçiyordu?"},
+      {en:"Is there something in your life you would like to change and talk through together?", tr:"Hayatında değiştirmek istediğin ve birlikte konuşabileceğimiz bir şey var mı?"},
+      {en:"What is something new you would love for us to try together?", tr:"Birlikte denememizi çok istediğin yeni bir şey nedir?"},
+    ]},
+};
+const CAT_ORDER = ["romantic","adventurous","cozy","budget","convo"];
+
+const TOTAL_CARDS = CAT_ORDER.reduce((sum,key)=>sum + CATS[key].cards.length,0);
+let STATE = {
+  lang:null,
+  screen:"language",
+  currentCat:null,
+  currentIndex:null,
+  flipped:false,
+  usedIndices:{},
+  lastIndex:{}
+};
+
+function L(obj){ return obj[STATE.lang || 'en']; }
+function setLang(l){
+  if(l !== 'en' && l !== 'tr') return;
+  STATE.lang = l;
+  document.documentElement.lang = l;
+  document.title = l === 'en' ? 'Date Night Box - Digital Companion' : 'Date Night Kutusu - Dijital Oyun';
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnTR').classList.toggle('active', l==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  if(STATE.screen === 'language') STATE.screen = 'cover';
+  render();
+}
+function go(id){
+  STATE.screen = id;
+  window.scrollTo({top:0,behavior:'smooth'});
+  render();
+}
+function openCat(cat){
+  STATE.currentCat = cat;
+  STATE.currentIndex = null;
+  STATE.flipped = false;
+  go('deck');
+}
+function drawCard(){
+  const key = STATE.currentCat;
+  const deck = CATS[key].cards;
+  let used = STATE.usedIndices[key] || [];
+  if(used.length >= deck.length) used = [];
+  let available = deck.map((_,i)=>i).filter(i=>!used.includes(i));
+  const previous = STATE.lastIndex[key];
+  if(available.length > 1 && previous !== undefined) available = available.filter(i=>i!==previous);
+  const idx = available[Math.floor(Math.random()*available.length)];
+  STATE.usedIndices[key] = [...used,idx];
+  STATE.lastIndex[key] = idx;
+  STATE.currentIndex = idx;
+  STATE.flipped = false;
+  render();
+}
+function flipCard(){
+  if(STATE.currentIndex === null) return;
+  STATE.flipped = true;
+  render();
+}
+function surpriseMe(){
+  const key = CAT_ORDER[Math.floor(Math.random()*CAT_ORDER.length)];
+  STATE.currentCat = key;
+  STATE.currentIndex = null;
+  STATE.screen = 'deck';
+  drawCard();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function resetAllDecks(){
+  STATE.usedIndices = {};
+  STATE.lastIndex = {};
+  STATE.currentCat = null;
+  STATE.currentIndex = null;
+  STATE.flipped = false;
+  go('hub');
+}
+
+function renderLanguage(){
+  return `<div class="card">
+    <p class="eyebrow">ENGLISH · TÜRKÇE</p>
+    <h1 class="t">Choose Your Language · Dilini Seç</h1>
+    <div class="body"><p>Choose a language to open the box.<br>Dijital kutuyu açmak için bir dil seçin.</p></div>
+    <div class="language-grid">
+      <button class="btn language-choice" type="button" onclick="setLang('en')">ENGLISH<small>Play in English</small></button>
+      <button class="btn language-choice" type="button" onclick="setLang('tr')">TÜRKÇE<small>Türkçe oyna</small></button>
+    </div>
+    <div class="legal-note">Offline HTML companion · No installation required · Kurulum gerektirmez</div>
+  </div>`;
+}
+function renderCover(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'54 READY-TO-USE CARDS · 5 DECKS':'54 HAZIR KART · 5 DESTE'}</p>
+    <h1 class="t">${L(T.brand)}</h1>
+    <div class="body"><p>${STATE.lang==='en'
+      ?'48 date ideas, 6 conversation starters, and a no-repeat surprise draw system to refresh your time together.'
+      :'Birlikte geçirdiğiniz zamanı canlandırmak için 48 randevu fikri, 6 sohbet başlatıcı ve kartları tekrarlamayan sürpriz çekim sistemi.'}</p></div>
+    <div class="feature-row">
+      <div class="feature"><span>EN / TR</span>${STATE.lang==='en'?'Bilingual':'İki Dilli'}</div>
+      <div class="feature"><span>OFFLINE</span>${STATE.lang==='en'?'No Installation':'Kurulum Yok'}</div>
+      <div class="feature"><span>3 DEVICES</span>${STATE.lang==='en'?'Phone · Tablet · Computer':'Telefon · Tablet · Bilgisayar'}</div>
+    </div>
+    <div class="choices"><button class="btn wide" type="button" onclick="go('howto')">${L(T.begin)}</button></div>
+    <div class="legal-note">${STATE.lang==='en'?'DIGITAL DOWNLOAD · NO PHYSICAL ITEM':'DİJİTAL İNDİRME · FİZİKSEL ÜRÜN GÖNDERİLMEZ'}</div>
+  </div>`;
+}
+function renderHowTo(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'HOW TO USE':'NASIL KULLANILIR'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Before You Begin':'Başlamadan Önce'}</h2>
+    <div class="body">
+      ${STATE.lang==='en' ? `
+      <p>Choose a deck or tap <strong>Surprise Me</strong>. Tap the face-down card to reveal your date idea. A card will not repeat until its deck is complete.</p>
+      <p>The included printable PDF is optional: print and cut the cards if you would also like a physical jar or box. This HTML companion works offline after download.</p>
+      <p style="font-style:italic; color:var(--muted); font-size:13.5px;">Choose activities that fit your comfort, budget, location, health, and local safety conditions.</p>` : `
+      <p>Bir deste seçin veya <strong>Beni Şaşırt</strong> düğmesine dokunun. Kapalı karta dokunarak fikri açın. Destedeki tüm kartlar tamamlanana kadar aynı kart tekrarlanmaz.</p>
+      <p>Basılı bir kutu veya kavanoz hazırlamak isterseniz paketteki PDF'yi yazdırıp kartları kesebilirsiniz. Bu HTML dosyası indirildikten sonra çevrimdışı çalışır.</p>
+      <p style="font-style:italic; color:var(--muted); font-size:13.5px;">Konforunuza, bütçenize, bulunduğunuz yere, sağlığınıza ve yerel güvenlik koşullarına uygun etkinlikleri seçin.</p>`}
+    </div>
+    <div class="choices"><button class="btn wide" type="button" onclick="go('hub')">${L(T.cont)}</button></div>
+  </div>`;
+}
+function renderHub(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'THE BOX':'KUTU'}</p>
+    <h1 class="t">${L(T.hubTitle)}</h1>
+    <p style="font-size:13px; color:var(--muted); margin:0 0 6px;">${L(T.hubHint)}</p>
+    <div class="catgrid">
+      ${CAT_ORDER.map(k=>{
+        const c = CATS[k];
+        const used = (STATE.usedIndices[k] || []).length;
+        return `<button type="button" class="catcard ${c.cls}" onclick="openCat('${k}')" aria-label="${c[STATE.lang]}"><span class="icon">${c.icon}</span>${c[STATE.lang]}<span style="display:block;font:600 11px Arial;margin-top:5px;opacity:.85;">${used}/${c.cards.length}</span></button>`;
+      }).join("")}
+    </div>
+    <div class="deck-actions">
+      <button class="btn" type="button" onclick="surpriseMe()">✦ ${L(T.surprise)}</button>
+      <button class="btn ghost" type="button" onclick="resetAllDecks()">↺ ${L(T.reset)}</button>
+    </div>
+  </div>`;
+}
+function renderDeck(){
+  const cat = CATS[STATE.currentCat];
+  const usedCount = (STATE.usedIndices[STATE.currentCat] || []).length;
+  const currentCard = STATE.currentIndex === null ? null : cat.cards[STATE.currentIndex];
+  let inner = "";
+  if(!currentCard){
+    inner = `<div class="choices"><button class="btn wide" type="button" onclick="drawCard()">✦ ${L(T.drawCard)}</button></div>`;
+  } else {
+    inner = `
+    <div class="cardflip ${STATE.flipped?'flipped':''}">
+      <div class="cardflip-inner">
+        <button type="button" class="cf-face cf-front" onclick="flipCard()" aria-label="${L(T.tapReveal)}">
+          ${cat.icon}<span style="font-size:13px; font-family:Arial,Helvetica,sans-serif; color:var(--rose-light); margin-top:10px;">${L(T.tapReveal)}</span>
+        </button>
+        <div class="cf-face cf-back" aria-live="polite">
+          <div class="cf-icon">${cat.icon}</div>
+          <div class="cf-prompt">${currentCard[STATE.lang]}</div>
+        </div>
+      </div>
+    </div>
+    <div class="choices"><button class="btn wide" type="button" onclick="drawCard()">↺ ${L(T.drawAnother)}</button></div>`;
+  }
+  return `<div class="card">
+    <p class="eyebrow">${cat[STATE.lang]}</p>
+    <h2 class="t">${cat.icon} ${cat[STATE.lang]}</h2>
+    <p style="font-size:12px; color:var(--muted);">${usedCount}/${cat.cards.length} ${L(T.drawn)}</p>
+    <p style="font-size:11.5px; color:var(--muted); margin:0;">${L(T.noRepeat)}</p>
+    ${inner}
+    <div class="choices"><button class="btn ghost wide" type="button" onclick="go('hub')">${L(T.back)}</button></div>
+  </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  let html = "";
+  if(STATE.screen==='language') html = renderLanguage();
+  else if(STATE.screen==='cover') html = renderCover();
+  else if(STATE.screen==='howto') html = renderHowTo();
+  else if(STATE.screen==='hub') html = renderHub();
+  else if(STATE.screen==='deck') html = renderDeck();
+  app.innerHTML = html;
+  const pill = document.getElementById('progressPill');
+  if(pill){
+    const total = Object.values(STATE.usedIndices).reduce((sum,items)=>sum + items.length,0);
+    pill.textContent = STATE.lang ? `${total}/${TOTAL_CARDS}` : `${TOTAL_CARDS}`;
+  }
+}
+render();
+</script>
+</body>
+</html>

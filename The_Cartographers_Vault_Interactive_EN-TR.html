@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Cartographer's Vault — Digital Case File</title>
+<meta name="description" content="A self-contained bilingual digital escape-puzzle game for 1-6 players.">
+<style>
+  :root{
+    --ink:#1c2b3a; --ink2:#243a4d; --brass:#a8763b; --brass-light:#d4a866;
+    --rust:#8a4a2f; --paper:#ede1c3; --paper2:#e2d3a8; --text:#2a2013; --muted:#8a7d5e;
+    --shadow:0 18px 42px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--ink); color:var(--paper); font-family:Arial,'Helvetica Neue',sans-serif; min-height:100vh; }
+  #app{max-width:900px; margin:0 auto; padding:0 16px 60px;}
+
+  .charthead{ position:relative; height:84px; overflow:hidden; margin-bottom:20px;
+    background:radial-gradient(ellipse at 50% 130%, #2a4257 0%, var(--ink) 75%);
+    border-bottom:1px solid rgba(168,118,59,.3); display:flex; align-items:center; justify-content:center;
+  }
+  .compass{ position:absolute; left:22px; top:50%; transform:translateY(-50%); width:52px; height:52px; }
+  .compass svg{ width:100%; height:100%; animation:spin 18s linear infinite; }
+  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  .brand-text{ font-family:Georgia,'Times New Roman',serif; font-weight:800; font-style:italic; font-size:23px; color:var(--brass-light); position:relative; z-index:1; }
+  .topbar-corner{ position:absolute; top:16px; right:16px; display:flex; align-items:center; gap:10px; z-index:2; }
+  .lang-toggle{ display:flex; border:1px solid var(--brass); border-radius:20px; overflow:hidden; }
+  .lang-toggle button{ background:transparent; border:none; color:#c9b98e; padding:5px 13px; font-family:Arial,'Helvetica Neue',sans-serif; font-weight:700; font-size:11.5px; cursor:pointer; }
+  .lang-toggle button.active{ background:var(--brass); color:#1c1408; }
+  .progress-pill{ font-family:Arial,'Helvetica Neue',sans-serif; font-size:11px; color:var(--paper); border:1px solid var(--rust); background:rgba(138,74,47,.3); padding:5px 12px; border-radius:20px; margin-right:6px; }
+
+  .card{ background:var(--paper); color:var(--text); border-radius:4px; padding:32px 30px 26px; box-shadow:var(--shadow); border:1px solid var(--brass); position:relative; animation:fadeUp .45s ease; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .eyebrow{ font-family:Arial,'Helvetica Neue',sans-serif; font-weight:700; font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--rust); margin:0 0 10px; }
+  h1.t{ font-family:Georgia,'Times New Roman',serif; font-weight:800; font-style:italic; font-size:clamp(22px,4.2vw,30px); color:#1c1408; margin:0 0 16px; line-height:1.2; }
+  h2.t{ font-family:Georgia,'Times New Roman',serif; font-weight:800; font-style:italic; font-size:20px; color:#1c1408; margin:0 0 12px; }
+  .body p{ font-family:Georgia,'Times New Roman',serif; font-size:19px; line-height:1.68; color:var(--text); margin:0 0 14px; }
+  .tag{ display:inline-block; font-family:Arial,'Helvetica Neue',sans-serif; font-weight:700; font-size:10.5px; letter-spacing:.08em; color:#fff; background:var(--rust); padding:4px 12px; border-radius:2px; margin-bottom:10px; text-transform:uppercase; }
+  .puzzlebox{ border:1.6px solid var(--ink); border-radius:6px; padding:20px 22px; margin:16px 0; background:var(--paper2); }
+  .puzzlebox .lbl{ font-family:Arial,'Helvetica Neue',sans-serif; font-weight:700; font-size:10px; color:var(--rust); text-transform:uppercase; letter-spacing:.07em; margin-bottom:8px; }
+  .code-display{ font-family:Arial,'Helvetica Neue',sans-serif; font-weight:700; font-size:24px; letter-spacing:.3em; text-align:center; background:#fff; border:2px dashed var(--rust); border-radius:6px; padding:14px; margin:10px 0; }
+  .answer-row{ display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .answer-row input{ width:54px; height:54px; text-align:center; font-family:Georgia,'Times New Roman',serif; font-weight:800; font-size:20px; border:2px solid var(--text); border-radius:6px; background:#fff; color:var(--text); }
+  .btn{ background:var(--ink); color:var(--paper); border:1px solid var(--brass); border-radius:4px; padding:11px 18px; font-family:Arial,'Helvetica Neue',sans-serif; font-weight:700; font-size:13.5px; cursor:pointer; transition:.15s; }
+  .btn:hover{ background:var(--rust); border-color:var(--brass-light); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.wide{ width:100%; }
+  .btn.ghost{ background:transparent; color:var(--rust); border:1px solid var(--rust); }
+  .feedback{ font-family:Arial,'Helvetica Neue',sans-serif; font-weight:700; font-size:13px; margin-top:10px; min-height:18px; }
+  .feedback.good{ color:#1f6b3a; }
+  .feedback.bad{ color:var(--rust); }
+  .hint-toggle{ margin-top:14px; }
+  .hint-body{ margin-top:10px; border:1.4px dashed var(--rust); border-radius:5px; padding:12px 14px; background:#f2e8cc; font-family:Georgia,'Times New Roman',serif; font-size:16px; color:#4a3a20; display:none; }
+  .hint-body.open{ display:block; }
+  .map-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:18px 0 8px; }
+  .room-card{ background:var(--ink2); border:1px solid var(--brass); border-radius:6px; padding:16px 14px; text-align:center; cursor:pointer; transition:.15s; color:var(--paper); position:relative; }
+  .room-card:hover{ background:var(--rust); border-color:var(--brass-light); }
+  .room-card .check{ position:absolute; top:8px; right:10px; color:var(--brass-light); font-size:14px; }
+  .room-card .name{ font-family:Arial,'Helvetica Neue',sans-serif; font-weight:700; font-size:12.5px; }
+  .dials{ display:flex; gap:14px; justify-content:center; margin:22px 0; }
+  .dial{ width:62px; height:62px; border:3px solid var(--text); border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:Georgia,'Times New Roman',serif; font-weight:800; font-size:22px; background:#fff; color:var(--text); }
+  .dial.empty{ color:#bbb; }
+  .choices{ display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+  .stamp{ display:inline-block; border:3px solid var(--rust); color:var(--rust); font-family:Georgia,'Times New Roman',serif; font-weight:800; font-style:italic; letter-spacing:.04em; padding:8px 18px; transform:rotate(-4deg); border-radius:4px; margin:8px 0 18px; font-size:16px; }
+  .itemlist{ list-style:none; padding:0; margin:10px 0; }
+  .itemlist li{ font-family:Georgia,'Times New Roman',serif; font-size:17px; margin-bottom:8px; padding-left:16px; border-left:2px solid var(--brass); }
+  .keyword{ display:inline-block; font-family:Georgia,'Times New Roman',serif; font-weight:800; font-style:italic; font-size:22px; color:var(--rust); border:2px solid var(--rust); padding:8px 20px; border-radius:6px; letter-spacing:.05em; margin:10px 0; }
+  .map-fragment{ background:#fbf8ef; border:2px solid var(--brass); border-radius:6px; padding:16px; margin:14px 0; }
+  .symbol-grid{ display:grid; grid-template-columns:repeat(6,1fr); gap:16px 12px; align-items:center; justify-items:center; }
+  .mapsymbol{ width:24px; height:24px; display:flex; align-items:center; justify-content:center; color:var(--ink); font-size:20px; font-weight:700; }
+  .plain-circle{ width:15px; height:15px; border:2px solid var(--ink); border-radius:50%; }
+  .rose{ width:18px; height:18px; border:2px solid var(--ink); border-radius:50%; position:relative; }
+  .rose::before,.rose::after{ content:""; position:absolute; left:50%; top:50%; background:var(--ink); transform:translate(-50%,-50%); }
+  .rose::before{ width:26px; height:2px; }
+  .rose::after{ width:2px; height:26px; }
+  .privacy-note{ margin-top:18px; text-align:center; font-size:11px; color:var(--muted); }
+  button:focus-visible,input:focus-visible{ outline:3px solid var(--brass-light); outline-offset:2px; }
+  @media (max-width:640px){
+    .charthead{height:104px; align-items:flex-end; padding-bottom:14px;}
+    .compass{left:14px; top:28px; width:42px; height:42px;}
+    .brand-text{font-size:18px; max-width:48%; text-align:center; line-height:1.05;}
+    .topbar-corner{top:14px; right:10px; gap:5px;}
+    .progress-pill{padding:5px 9px; margin-right:0;}
+    .lang-toggle button{padding:5px 10px;}
+    .card{padding:22px 18px 20px;}
+    .symbol-grid{gap:14px 6px;}
+    .dials{gap:8px;}
+    .dial{width:52px;height:52px;}
+  }
+</style>
+</head>
+<body>
+<div class="charthead">
+  <div class="compass">
+    <svg viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="46" fill="none" stroke="#d4a866" stroke-width="2"/>
+      <circle cx="50" cy="50" r="36" fill="none" stroke="#d4a866" stroke-width="1" opacity=".5"/>
+      <polygon points="50,8 56,50 50,92 44,50" fill="#8a4a2f"/>
+      <polygon points="8,50 50,44 92,50 50,56" fill="#d4a866"/>
+      <circle cx="50" cy="50" r="4" fill="#ede1c3"/>
+    </svg>
+  </div>
+  <div class="brand-text" id="brandLabel">The Cartographer's Vault</div>
+  <div class="topbar-corner">
+    <div class="progress-pill" id="progressPill">·</div>
+    <div class="lang-toggle">
+      <button id="btnEN" class="active" onclick="setLang('en')">EN</button>
+      <button id="btnTR" onclick="setLang('tr')">TR</button>
+    </div>
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+const T = {
+  brand:{en:"The Cartographer's Vault", tr:"Haritacının Kasası"},
+  begin:{en:"Open the Case File", tr:"Dosyayı Aç"},
+  cont:{en:"Continue", tr:"Devam Et"},
+  toStudy:{en:"Enter the Study", tr:"Çalışma Odasına Gir"},
+  toPuzzles:{en:"Begin Solving", tr:"Çözmeye Başla"},
+  checkBtn:{en:"Check", tr:"Kontrol Et"},
+  correct:{en:"Correct! Digit locked in.", tr:"Doğru! Rakam kilitlendi."},
+  wrong:{en:"Not quite — try again.", tr:"Tam değil — tekrar dene."},
+  showHint:{en:"🔍 Show Hint", tr:"🔍 İpucunu Göster"},
+  hideHint:{en:"Hide Hint", tr:"İpucunu Gizle"},
+  toVault:{en:"Go to the Vault Tracker", tr:"Kasa Takip Kartına Git"},
+  needAll:{en:"Solve all four puzzles first.", tr:"Önce dört bilmeceyi de çözün."},
+  enterCode:{en:"Open the Vault", tr:"Kasayı Aç"},
+  backHub:{en:"◂ Back to the Puzzles", tr:"◂ Bilmecelere Dön"},
+  playAgain:{en:"Reopen the Case", tr:"Dosyayı Yeniden Aç"},
+  players:{en:"Players: 1–6 · Case No. FE-04", tr:"Oyuncu: 1–6 · Dosya No. FE-04"},
+};
+
+const PUZZLE_META = [
+  {key:"letter", icon:"✉", en:"The Coded Letter", tr:"Şifreli Mektup"},
+  {key:"shelf", icon:"📚", en:"The Bookshelf", tr:"Kitaplık"},
+  {key:"name", icon:"🧭", en:"The Explorer's Name", tr:"Kâşifin Adı"},
+  {key:"map", icon:"🗺", en:"The Map Fragment", tr:"Harita Parçası"},
+];
+
+const PUZZLES = {
+  letter:{ answerCode:"Nw==", title:{en:"The Coded Letter", tr:"Şifreli Mektup"},
+    flavor:{en:"Finch encrypted a single word in his final letter using a simple shift cipher — every letter is shifted three places forward in the alphabet (A becomes D, B becomes E, and so on).",
+            tr:"Finch, son mektubundaki tek bir kelimeyi basit bir kaydırma şifresiyle şifrelemiş — her harf alfabede üç adım ileri kaydırılmış (A, D olmuş, B, E olmuş, vs.)."},
+    puzzleLbl:{en:"Shift Back to Decode", tr:"Çözmek İçin Geriye Kaydırın"},
+    code:"V H Y H Q",
+    puzzleText:{en:"Shift each letter of the code backward by three, then convert the decoded word to a digit.", tr:"Kodun her harfini üç geriye kaydırarak çözün, sonra çözülen kelimeyi bir rakama çevirin."},
+    hint:{en:"Shift each letter back by 3 (V becomes S, and so on). The result is an English number word that rhymes with 'heaven'.", tr:"Her harfi 3 geri kaydırın (V, S olur, vs.). Sonuç, İngilizce 'heaven' ile kafiyeli bir sayı kelimesidir."} },
+  shelf:{ answerCode:"NA==", title:{en:"The Bookshelf", tr:"Kitaplık"},
+    flavor:{en:"The study has three shelves holding seventeen books in total. The top shelf holds exactly twice as many books as the bottom shelf. The middle shelf holds five books.",
+            tr:"Çalışma odasında toplam on yedi kitap barındıran üç raf var. Üst raf, alt raftakinin tam iki katı kitap barındırıyor. Orta raf beş kitap barındırıyor."},
+    puzzleLbl:{en:"Shelf Math", tr:"Raf Matematiği"},
+    puzzleText:{en:"How many books are on the bottom shelf? That number is your digit.", tr:"Alt rafta kaç kitap var? Bu sayı sizin rakamınız."},
+    hint:{en:"Let the bottom shelf be x. The top shelf is 2x. The middle shelf is 5. Together they equal 17.", tr:"Alt raf x olsun. Üst raf 2x. Orta raf 5. Toplamları 17 eder."} },
+  name:{ answerCode:"OA==", title:{en:"The Explorer's Name", tr:"Kâşifin Adı"},
+    flavor:{en:"Somewhere in the professor's own papers, his full name appears in his careful hand — ALISTAIR.",
+            tr:"Profesörün kendi kağıtlarının bir yerinde, tam adı kendi özenli el yazısıyla görünüyor — ALISTAIR."},
+    puzzleLbl:{en:"Count the Letters", tr:"Harfleri Sayın"},
+    puzzleText:{en:"Count the letters in the professor's first name — ALISTAIR. That count is your digit.", tr:"Profesörün adındaki harfleri sayın — ALISTAIR. Bu sayı sizin rakamınız."},
+    hint:{en:"Spell it out loud and touch one finger for every letter: A-L-I-S-T-A-I-R.", tr:"Yüksek sesle harf harf söyleyin ve her harf için bir parmak sayın: A-L-I-S-T-A-I-R."} },
+  map:{ answerCode:"Mw==", title:{en:"The Map Fragment", tr:"Harita Parçası"},
+    flavor:{en:"Scattered across the map fragment are small hand-drawn symbols. Some are stars, some are circles — but only one shape is Finch's personal mark: a compass rose (a circle with four small lines crossing it).",
+            tr:"Harita parçasına serpiştirilmiş küçük, elle çizilmiş semboller var. Bazıları yıldız, bazıları daire — ama sadece bir şekil Finch'in kişisel işareti: bir pusula gülü (üzerinde dört küçük çizgi kesişen bir daire)."},
+    puzzleLbl:{en:"Count the Compass Roses", tr:"Pusula Güllerini Sayın"},
+    puzzleText:{en:"Count how many true compass roses appear among the stars and plain circles. That count is your digit.", tr:"Yıldızlar ve düz daireler arasında kaç gerçek pusula gülü olduğunu sayın. Bu sayı sizin rakamınız."},
+    hint:{en:"Ignore every star and every plain circle. Look only for a circle with a small cross or four short lines through it.", tr:"Her yıldızı ve düz daireyi göz ardı edin. Sadece içinden küçük bir artı ya da dört kısa çizgi geçen bir daire arayın."} }
+};
+const PUZZLE_ORDER = ["letter","shelf","name","map"];
+
+const STORAGE_KEY = "cartographers-vault-fe04-v1";
+const DEFAULT_STATE = { lang:"en", screen:"cover", digits:{letter:null,shelf:null,name:null,map:null}, hints:{} };
+function freshState(){ return JSON.parse(JSON.stringify(DEFAULT_STATE)); }
+
+function loadState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(!saved || !["en","tr"].includes(saved.lang)) return freshState();
+    return {
+      lang:saved.lang,
+      screen:typeof saved.screen === "string" ? saved.screen : "cover",
+      digits:{...DEFAULT_STATE.digits,...(saved.digits||{})},
+      hints:saved.hints||{}
+    };
+  }catch(_){ return freshState(); }
+}
+function saveState(){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(STATE)); }catch(_){} }
+function answerFor(key){ return atob(PUZZLES[key].answerCode); }
+let STATE = loadState();
+
+function L(obj){ return obj[STATE.lang]; }
+function setLang(l){
+  STATE.lang = l;
+  document.documentElement.lang = l;
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnTR').classList.toggle('active', l==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  saveState();
+  render();
+}
+function go(screen){ STATE.screen = screen; saveState(); window.scrollTo({top:0,behavior:'smooth'}); render(); }
+function allSolved(){ return Object.values(STATE.digits).every(d=>d!==null); }
+function codeString(){ return PUZZLE_ORDER.map(k=>STATE.digits[k]).join(""); }
+
+function checkDigit(key){
+  const input = document.getElementById('input_'+key);
+  const fb = document.getElementById('fb_'+key);
+  const val = (input.value||"").trim();
+  if(val === answerFor(key)){
+    STATE.digits[key] = val;
+    fb.textContent = L(T.correct); fb.className = "feedback good"; input.disabled = true;
+    saveState(); updateProgressPill();
+  } else {
+    fb.textContent = L(T.wrong); fb.className = "feedback bad";
+  }
+}
+function toggleHint(key){
+  STATE.hints[key] = !STATE.hints[key];
+  saveState();
+  document.getElementById('hint_'+key).classList.toggle('open', STATE.hints[key]);
+  document.getElementById('hintbtn_'+key).textContent = STATE.hints[key] ? L(T.hideHint) : L(T.showHint);
+}
+function checkVault(){
+  const boxes = ['v1','v2','v3','v4'].map(id=>document.getElementById(id).value.trim());
+  go(boxes.join("") === codeString() ? 'vaultopen' : 'vaultwrong');
+}
+function updateProgressPill(){
+  const pill = document.getElementById('progressPill');
+  if(pill) pill.textContent = Object.values(STATE.digits).filter(d=>d!==null).length + " / 4";
+}
+
+function renderCover(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'CASE NO. FE-04 · THE FINCH EXPEDITION SOCIETY':'DOSYA NO. FE-04 · FINCH KEŞİF TOPLULUĞU'}</p>
+    <h1 class="t">${STATE.lang==='en'?"The Cartographer's Vault":'Haritacının Kasası'}</h1>
+    <div class="body"><p>${STATE.lang==='en'
+      ?'Four puzzles. One code. A door that has waited forty years to open. An escape-puzzle game for 1–6 players.'
+      :'Dört bilmece. Tek bir kod. Kırk yıldır açılmayı bekleyen bir kapı. 1-6 oyuncu için bir kaçış-bulmaca oyunu.'}</p></div>
+    <div class="choices"><button class="btn wide" onclick="go('howto')">${L(T.begin)}</button></div>
+    <div class="privacy-note">${STATE.lang==='en'?'Works offline · Progress saves on this device · No data is collected':'Çevrimdışı çalışır · İlerlemeniz bu cihazda kaydedilir · Veri toplanmaz'}</div>
+  </div>`;
+}
+function renderHowTo(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'HOW TO PLAY':'NASIL OYNANIR'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Before You Begin':'Başlamadan Önce'}</h2>
+    <div class="body">
+      <p>${STATE.lang==='en'
+        ?'Solve the four puzzles in any order. Each one gives you a single digit. Enter all four digits, in puzzle order, into the Vault Tracker to form the code.'
+        :'Dört bilmeceyi istediğiniz sırada çözün. Her biri size tek bir rakam verecek. Dört rakamı, bilmece sırasına göre Kasa Takip Kartı\'na yazarak kodu oluşturun.'}</p>
+      <p style="font-family:Arial,'Helvetica Neue',sans-serif; font-size:12.5px; color:var(--muted);">${L(T.players)}</p>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('study')">${L(T.cont)}</button></div>
+  </div>`;
+}
+function renderStudy(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'THE SCENE':'MEKAN'}</p>
+    <h2 class="t">${STATE.lang==='en'?'The Study':'Çalışma Odası'}</h2>
+    <div class="body"><p>${STATE.lang==='en'
+      ?"Dust sheets cover the furniture. A rolltop desk sits beneath a cracked window. Bookshelves line every wall, arranged not by title but by some system only Finch understood. A brass compass, tarnished with age, rests on the desk beside a half-finished letter."
+      :"Mobilyaların üzeri tozlu örtülerle kaplı. Çatlak bir pencerenin altında maun bir yazı masası duruyor. Duvarların her yanında, başlığa göre değil, yalnızca Finch'in anladığı bir sisteme göre dizilmiş kitaplıklar var. Masanın üzerinde, yarım kalmış bir mektubun yanında zamanla kararmış pirinç bir pusula duruyor."}</p></div>
+    <ul class="itemlist">
+      <li>${STATE.lang==='en'?'A brass desk compass, its needle frozen in place.':'Pirinç bir masa pusulası; iğnesi olduğu yerde donmuş.'}</li>
+      <li>${STATE.lang==='en'?'A half-burnt letter, the ink faded but legible.':'Yarı yanmış bir mektup; mürekkebi solmuş ama okunaklı.'}</li>
+      <li>${STATE.lang==='en'?'A bookshelf with exactly seventeen books.':'Tam olarak on yedi kitap bulunan bir kitaplık.'}</li>
+      <li>${STATE.lang==='en'?'A framed map fragment, hand-inked, showing strange little symbols.':'Çerçeveli bir harita parçası; tuhaf küçük semboller gösteriyor.'}</li>
+    </ul>
+    <div class="choices"><button class="btn wide" onclick="go('puzzlehub')">${L(T.toPuzzles)}</button></div>
+  </div>`;
+}
+function renderPuzzleHub(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'4 PUZZLES':'4 BİLMECE'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Puzzles':'Bilmeceler'}</h2>
+    <div class="map-grid">
+      ${PUZZLE_ORDER.map(k=>`<div class="room-card" onclick="go('${k}')">${STATE.digits[k]?'<span class="check">✓</span>':''}<div style="font-size:22px;">${PUZZLE_META.find(m=>m.key===k).icon}</div><div class="name">${PUZZLE_META.find(m=>m.key===k)[STATE.lang]}</div></div>`).join("")}
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('tracker')">${L(T.toVault)}</button></div>
+  </div>`;
+}
+function renderPuzzle(key){
+  const p = PUZZLES[key];
+  const solved = STATE.digits[key] !== null;
+  return `<div class="card">
+    <span class="tag">${PUZZLE_META.find(m=>m.key===key)[STATE.lang]}</span>
+    <h2 class="t">${p.title[STATE.lang]}</h2>
+    <div class="body"><p>${p.flavor[STATE.lang]}</p></div>
+    <div class="puzzlebox">
+      <div class="lbl">${p.puzzleLbl[STATE.lang]}</div>
+      ${p.code?`<div class="code-display">${p.code}</div><p style="font-family:Arial,'Helvetica Neue',sans-serif; font-size:11px; text-align:center; color:var(--muted);">A B C D E F G H I J K L M N O P Q R S T U V W X Y Z</p>`:""}
+      ${key==='map'?renderMapFragment():''}
+      <p style="font-family:Georgia,'Times New Roman',serif; font-size:16px; margin:0;">${p.puzzleText[STATE.lang]}</p>
+    </div>
+    <div class="answer-row">
+      <input id="input_${key}" maxlength="1" inputmode="numeric" autocomplete="off" aria-label="${STATE.lang==='en'?'One-digit answer':'Tek rakamlı cevap'}" data-check-key="${key}" ${solved?'disabled value="'+answerFor(key)+'"':''} placeholder="?">
+      <button class="btn" onclick="checkDigit('${key}')" ${solved?'disabled':''}>${L(T.checkBtn)}</button>
+      <span class="feedback ${solved?'good':''}" id="fb_${key}" aria-live="polite">${solved?L(T.correct):''}</span>
+    </div>
+    <div class="hint-toggle">
+      <button class="btn ghost" id="hintbtn_${key}" onclick="toggleHint('${key}')">${STATE.hints[key]?L(T.hideHint):L(T.showHint)}</button>
+      <div class="hint-body ${STATE.hints[key]?'open':''}" id="hint_${key}">${p.hint[STATE.lang]}</div>
+    </div>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('puzzlehub')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderMapFragment(){
+  const star = '<span class="mapsymbol" aria-label="star">★</span>';
+  const circle = '<span class="mapsymbol"><span class="plain-circle" aria-label="plain circle"></span></span>';
+  const rose = '<span class="mapsymbol"><span class="rose" aria-label="compass rose"></span></span>';
+  return `<div class="map-fragment" role="img" aria-label="${STATE.lang==='en'?'A map fragment containing stars, plain circles, and compass roses':'Yıldızlar, düz daireler ve pusula gülleri içeren harita parçası'}"><div class="symbol-grid">
+    ${star}${star}${rose}${circle}${star}${star}
+    ${star}${rose}${star}${star}${circle}${star}
+    ${star}${rose}${star}${star}${star}${star}
+  </div></div>`;
+}
+function renderTracker(){
+  const ready = allSolved();
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'ASSEMBLE THE CODE':'KODU OLUŞTURUN'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Vault Tracker':'Kasa Takip Kartı'}</h2>
+    <div class="dials">${PUZZLE_ORDER.map(k=>`<div class="dial ${STATE.digits[k]?'':'empty'}">${STATE.digits[k]||'?'}</div>`).join("")}</div>
+    ${ready?`
+    <div class="answer-row" style="justify-content:center;">
+      <input id="v1" maxlength="1" inputmode="numeric" autocomplete="off" aria-label="${STATE.lang==='en'?'Vault digit 1':'Kasa rakamı 1'}" data-vault-index="1" placeholder="?">
+      <input id="v2" maxlength="1" inputmode="numeric" autocomplete="off" aria-label="${STATE.lang==='en'?'Vault digit 2':'Kasa rakamı 2'}" data-vault-index="2" placeholder="?">
+      <input id="v3" maxlength="1" inputmode="numeric" autocomplete="off" aria-label="${STATE.lang==='en'?'Vault digit 3':'Kasa rakamı 3'}" data-vault-index="3" placeholder="?">
+      <input id="v4" maxlength="1" inputmode="numeric" autocomplete="off" aria-label="${STATE.lang==='en'?'Vault digit 4':'Kasa rakamı 4'}" data-vault-index="4" placeholder="?">
+    </div>
+    <div class="choices"><button class="btn wide" onclick="checkVault()">${L(T.enterCode)}</button></div>`
+    : `<p style="text-align:center; font-family:Arial,'Helvetica Neue',sans-serif; font-weight:600; color:var(--muted);">${L(T.needAll)}</p>`}
+    <div class="choices"><button class="btn ghost wide" onclick="go('puzzlehub')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderVaultOpen(){
+  return `<div class="card">
+    <div class="stamp">${STATE.lang==='en'?'The Vault Opens':'Kasa Açılıyor'}</div>
+    <div class="body">
+      <p>${STATE.lang==='en'
+        ?"The vault swings open. Inside, wrapped in oilcloth, is a single folded page in Finch's hand: a coordinate, a date, and one word underlined twice —"
+        :"Kasa açılıyor. İçinde, muşambaya sarılı, Finch'in el yazısıyla katlanmış tek bir sayfa var: bir koordinat, bir tarih ve iki kez altı çizilmiş tek bir kelime —"}</p>
+      <div class="keyword">MERIDIAN</div>
+      <p>${STATE.lang==='en'
+        ?"It seems the professor's search didn't end here. Whatever he found, he hid the next piece of it somewhere else entirely — and he left this word as the key to reach it."
+        :"Görünüşe göre profesörün arayışı burada bitmemiş. Bulduğu her ne ise, bir sonraki parçasını bambaşka bir yere saklamış — ve oraya ulaşmak için bu kelimeyi anahtar olarak bırakmış."}</p>
+      <p style="font-style:italic; font-family:Arial,'Helvetica Neue',sans-serif; font-size:13px; color:var(--muted);">${STATE.lang==='en'?'Keep the word MERIDIAN. You will need it to open the next case in this series.':'MERIDIAN kelimesini saklayın. Bu serinin bir sonraki dosyasını açmak için buna ihtiyacınız olacak.'}</p>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="resetGame()">↺ ${L(T.playAgain)}</button></div>
+  </div>`;
+}
+function renderVaultWrong(){
+  return `<div class="card">
+    <div class="stamp" style="border-color:var(--muted); color:var(--muted);">${STATE.lang==='en'?'Not Yet':'Henüz Değil'}</div>
+    <div class="body"><p>${STATE.lang==='en'
+      ?"The tumblers hold firm. Somewhere, Finch would be smiling — check your four digits, in order, and try again."
+      :"Kilit mekanizması sıkı duruyor. Bir yerlerde, Finch gülümsüyor olurdu — dört rakamınızı sırayla kontrol edip tekrar deneyin."}</p></div>
+    <div class="choices">
+      <button class="btn wide" onclick="go('tracker')">${STATE.lang==='en'?'Try Again':'Tekrar Dene'}</button>
+      <button class="btn ghost wide" onclick="resetGame()">↺ ${L(T.playAgain)}</button>
+    </div>
+  </div>`;
+}
+function resetGame(){
+  const lang = STATE.lang;
+  STATE = freshState();
+  STATE.lang = lang;
+  saveState();
+  render();
+}
+
+function bindNumericInputs(){
+  document.querySelectorAll('input[inputmode="numeric"]').forEach((input)=>{
+    input.addEventListener('input',()=>{
+      input.value = input.value.replace(/\D/g,'').slice(0,1);
+      if(input.dataset.vaultIndex && input.value){
+        const next = document.getElementById('v'+(Number(input.dataset.vaultIndex)+1));
+        if(next) next.focus();
+      }
+    });
+    input.addEventListener('keydown',(event)=>{
+      if(event.key !== 'Enter') return;
+      if(input.dataset.checkKey) checkDigit(input.dataset.checkKey);
+      else if(input.dataset.vaultIndex) checkVault();
+    });
+  });
+}
+
+function render(){
+  const app = document.getElementById('app');
+  let html = "";
+  if(STATE.screen==='cover') html = renderCover();
+  else if(STATE.screen==='howto') html = renderHowTo();
+  else if(STATE.screen==='study') html = renderStudy();
+  else if(STATE.screen==='puzzlehub') html = renderPuzzleHub();
+  else if(PUZZLE_ORDER.includes(STATE.screen)) html = renderPuzzle(STATE.screen);
+  else if(STATE.screen==='tracker') html = renderTracker();
+  else if(STATE.screen==='vaultopen') html = renderVaultOpen();
+  else if(STATE.screen==='vaultwrong') html = renderVaultWrong();
+  app.innerHTML = html;
+  document.documentElement.lang = STATE.lang;
+  document.getElementById('btnEN').classList.toggle('active', STATE.lang==='en');
+  document.getElementById('btnTR').classList.toggle('active', STATE.lang==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  updateProgressPill();
+  bindNumericInputs();
+}
+render();
+</script>
+</body>
+</html>

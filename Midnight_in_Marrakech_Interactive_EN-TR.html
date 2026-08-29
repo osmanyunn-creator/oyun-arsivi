@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A bilingual, offline romantic two-player mystery adventure in Marrakech.">
+<title>Midnight in Marrakech</title>
+<style>
+  :root{
+    --ink:#2b1f2e; --plum:#1c1420; --terra:#c1613f; --terra-light:#e08a56;
+    --gold:#c99a3d; --rose:#a8425a; --teal:#2f6f6b; --paper:#f7ecd9; --paper2:#f0dcc0;
+    --text:#2b1f2e; --muted:#8a7458;
+    --shadow:0 18px 40px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--plum); color:var(--paper); font-family:'Trebuchet MS',Arial,sans-serif; min-height:100vh; }
+  #app{max-width:900px; margin:0 auto; padding:0 16px 60px;}
+
+  .starhead{ position:relative; height:80px; overflow:hidden; margin-bottom:20px;
+    background:radial-gradient(ellipse at 50% 120%, #241a29 0%, var(--plum) 75%);
+    border-bottom:1px solid rgba(201,154,61,.3); display:flex; align-items:center; justify-content:center;
+  }
+  .starspin{ position:absolute; left:24px; top:50%; width:40px; height:40px; transform:translateY(-50%); }
+  .starspin svg{ width:100%; height:100%; animation:spin 9s linear infinite; }
+  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  .brand-text{ font-family:'Poppins',Arial,sans-serif; font-weight:800; font-size:18px; color:var(--gold); letter-spacing:.02em; }
+  .topbar-right{ position:absolute; right:16px; top:50%; transform:translateY(-50%); display:flex; align-items:center; gap:10px; }
+  .lang-toggle{display:flex; border:1px solid var(--gold); border-radius:20px; overflow:hidden;}
+  .lang-toggle button{background:transparent; border:none; color:var(--muted); padding:5px 13px; font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:11.5px; cursor:pointer;}
+  .lang-toggle button.active{background:var(--gold); color:#2b1f2e;}
+  .progress-pill{ font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:12px; color:var(--paper); border:1px solid var(--terra); background:rgba(193,97,63,.25); padding:5px 12px; border-radius:20px;}
+
+  .card{ background:var(--paper); color:var(--text); border-radius:16px; padding:32px 30px 26px; box-shadow:var(--shadow); border:3px solid var(--ink); position:relative; animation:fadeUp .45s ease; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .eyebrow{ font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--terra); margin:0 0 10px; }
+  h1.t{ font-family:'Poppins',Arial,sans-serif; font-weight:800; font-size:clamp(21px,4vw,28px); color:#2b1f2e; margin:0 0 14px; line-height:1.2; }
+  h2.t{ font-family:'Poppins',Arial,sans-serif; font-weight:800; font-size:20px; color:#2b1f2e; margin:0 0 12px; }
+  .body p{ font-family:'Georgia',serif; font-weight:400; font-size:16px; line-height:1.65; color:var(--text); margin:0 0 14px; }
+  .loctag{ display:inline-block; font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:11px; letter-spacing:.08em; color:#fff; background:var(--terra); padding:4px 12px; border-radius:20px; margin-bottom:10px; }
+  .cluebox{ border:3px solid var(--ink); border-radius:14px; padding:16px 18px; margin:14px 0; background:var(--paper2); }
+  .cluebox .lbl{ font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:10.5px; color:var(--rose); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+  .tilerow{ display:flex; gap:8px; margin:14px 0; flex-wrap:wrap; justify-content:center; }
+  .tile{ width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; background:#fff; border:2px solid var(--gold); position:relative; }
+  .tile .num{ position:absolute; bottom:-15px; font-family:'Poppins',Arial,sans-serif; font-size:9px; color:var(--muted); left:50%; transform:translateX(-50%); }
+  .tile.odd{ border-color:var(--rose); color:var(--rose); }
+  .sachet-row{ display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px dotted #d9c39a; font-family:'Trebuchet MS',Arial,sans-serif; font-size:13.5px; }
+  .sachet-row .name{ font-weight:700; color:var(--terra); min-width:88px; }
+  .sachet-row b{ color:var(--rose); }
+  .lettercards{ display:flex; justify-content:space-around; gap:16px; margin:16px 0; flex-wrap:wrap; }
+  .lettercard{ text-align:center; }
+  .lettercard .cap{ font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:10.5px; color:var(--rose); margin-bottom:6px; }
+  .lettercard .boxes{ display:flex; gap:6px; }
+  .lbox{ width:32px; height:32px; border:2px solid var(--gold); border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'Poppins',Arial,sans-serif; font-weight:800; font-size:15px; background:#fff; }
+  .answer-row{ display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .answer-row input{ height:50px; text-align:center; font-family:'Poppins',Arial,sans-serif; font-weight:800; font-size:18px; border:3px solid var(--ink); border-radius:10px; background:#fff; color:var(--text); }
+  .answer-row input.digit{ width:56px; }
+  .answer-row input.word{ width:160px; text-transform:uppercase; letter-spacing:.06em; }
+  .btn{ background:var(--ink); color:var(--paper); border:2px solid var(--gold); border-radius:10px; padding:12px 18px; font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:13.5px; cursor:pointer; transition:.15s; }
+  .btn:hover{ background:var(--terra); border-color:var(--terra-light); }
+  .btn:focus-visible,.lang-toggle button:focus-visible{outline:3px solid #fff; outline-offset:3px;}
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.wide{ width:100%; }
+  .btn.ghost{ background:transparent; color:var(--terra); border:2px solid var(--terra); }
+  .feedback{ font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:13px; margin-top:10px; min-height:18px; }
+  .feedback.good{ color:#1f7a5c; }
+  .feedback.bad{ color:var(--rose); }
+  .hint-toggle{ margin-top:14px; }
+  .hint-body{ margin-top:10px; border:2px dashed var(--terra); border-radius:10px; padding:12px 14px; background:#f3e2c2; font-family:'Trebuchet MS',Arial,sans-serif; font-weight:600; font-size:13.5px; color:#5a4020; display:none; }
+  .hint-body.open{ display:block; }
+  .map-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:18px 0 8px; }
+  .room-card{ background:var(--plum); border:2px solid var(--gold); border-radius:14px; padding:16px 14px; text-align:center; cursor:pointer; transition:.15s; color:var(--paper); position:relative; }
+  .room-card:hover{ background:var(--terra); border-color:var(--terra-light); }
+  .room-card .check{ position:absolute; top:8px; right:10px; color:var(--gold); font-size:14px; }
+  .room-card .name{ font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:12.5px; }
+  .dials{ display:flex; gap:14px; justify-content:center; margin:22px 0; flex-wrap:wrap; }
+  .dial{ min-width:50px; height:50px; padding:0 8px; border:4px solid var(--ink); border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:'Poppins',Arial,sans-serif; font-weight:800; font-size:16px; background:#fff; color:var(--text); }
+  .dial.empty{ color:#ccc; }
+  .choices{ display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+  .stamp{ display:inline-block; border:4px solid var(--gold); color:var(--gold); font-family:'Poppins',Arial,sans-serif; font-weight:800; letter-spacing:.04em; padding:8px 20px; transform:rotate(-4deg); border-radius:12px; margin:8px 0 18px; font-size:17px; }
+  .language-card{text-align:center; padding-top:42px; padding-bottom:42px;}
+  .language-mark{width:76px;height:76px;margin:0 auto 18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    border:3px solid var(--ink);background:linear-gradient(145deg,var(--gold),var(--terra));font-weight:800;font-size:26px;color:#2b1f2e;}
+  .language-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px;}
+  .offline-note{font-family:'Trebuchet MS',Arial,sans-serif;font-weight:700;font-size:12.5px;color:#5a4020;
+    background:#f3e2c2;border:2px dashed var(--terra);border-radius:10px;padding:10px 12px;margin:18px 0 0;}
+  .evbox{border-left:4px solid var(--rose); padding:8px 0 8px 12px; margin:10px 0; background:rgba(168,66,90,.06); border-radius:0 8px 8px 0;}
+  .evbox .lbl{font-family:'Poppins',Arial,sans-serif; font-weight:700; font-size:10px; color:var(--rose); text-transform:uppercase; letter-spacing:.05em;}
+  .prompt-row{ margin:10px 0; }
+  .prompt-row .q{ font-style:italic; font-size:13.5px; color:var(--muted); margin-bottom:6px; }
+  .prompt-row textarea{ width:100%; border:2px solid var(--gold); border-radius:8px; padding:8px 10px; font-family:'Trebuchet MS',Arial,sans-serif; font-size:13px; resize:vertical; min-height:36px; }
+  @media (max-width:640px){
+    #app{padding-left:12px;padding-right:12px;}
+    .starhead{height:112px;margin-bottom:14px;align-items:flex-start;}
+    .starspin{width:30px;height:30px;left:12px;top:28px;}
+    .brand-text{position:absolute;left:58px;right:12px;top:17px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .topbar-right{top:auto;right:12px;bottom:14px;transform:none;}
+    .card{padding:22px 18px 20px;}
+  }
+  @media (max-width:420px){
+    .language-actions{grid-template-columns:1fr;}
+    .dials{gap:7px;}
+    .lettercards{gap:8px;}
+  }
+  @media (prefers-reduced-motion:reduce){.starspin svg,.card{animation:none;}html{scroll-behavior:auto;}}
+  .card::before{
+    content:""; position:absolute; top:14px; right:18px; width:46px; height:46px;
+    border-radius:50%; border:2px solid #c99a3d; opacity:.16; z-index:0; pointer-events:none;
+  }
+  .card > *{ position:relative; z-index:1; }
+</style>
+</head>
+<body>
+<div class="starhead">
+  <div class="starspin">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="50,4 58,38 92,38 63,58 74,92 50,70 26,92 37,58 8,38 42,38"
+        fill="none" stroke="#c99a3d" stroke-width="4"/>
+    </svg>
+  </div>
+  <div class="brand-text" id="brandLabel">MIDNIGHT IN MARRAKECH</div>
+  <div class="topbar-right">
+    <div class="progress-pill" id="progressPill">·</div>
+    <div class="lang-toggle" aria-label="Language / Dil">
+      <button type="button" id="btnEN" onclick="setLang('en')" aria-label="English">EN</button>
+      <button type="button" id="btnTR" onclick="setLang('tr')" aria-label="Türkçe">TR</button>
+    </div>
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+const T = {
+  brand:{en:"MIDNIGHT IN MARRAKECH", tr:"MIDNIGHT IN MARRAKECH"},
+  begin:{en:"Open the File", tr:"Dosyayı Aç"},
+  cont:{en:"Continue", tr:"Devam Et"},
+  toHub:{en:"Go to the Map", tr:"Haritaya Git"},
+  checkBtn:{en:"Check", tr:"Kontrol Et"},
+  correctDigit:{en:"Locked in.", tr:"Kilitlendi."},
+  correctWord:{en:"That's the word.", tr:"İşte bu kelime."},
+  wrong:{en:"Not quite — check your work.", tr:"Tam değil — tekrar kontrol edin."},
+  showHint:{en:"🔍 Show Hint", tr:"🔍 İpucunu Göster"},
+  hideHint:{en:"Hide Hint", tr:"İpucunu Gizle"},
+  needAll:{en:"Solve the three ciphers first.", tr:"Önce üç şifreyi çözün."},
+  enterCode:{en:"Open the Envelope", tr:"Zarfı Aç"},
+  backHub:{en:"◂ Back to the Map", tr:"◂ Haritaya Dön"},
+  playAgain:{en:"Restart the Evening", tr:"Geceyi Yeniden Başlat"},
+  players:{en:"Exactly 2 players · Time: 45–60 min", tr:"Tam olarak 2 oyuncu · Süre: 45–60 dakika"},
+  markVisited:{en:"Mark as Read", tr:"Okundu Olarak İşaretle"},
+};
+
+const LOC_META = [
+  {key:"riad", icon:"✨", en:"Riad Courtyard", tr:"Riad Avlusu", kind:"digit"},
+  {key:"souk", icon:"🌙", en:"Spice Souk", tr:"Baharat Çarşısı", kind:"word"},
+  {key:"tearoom", icon:"☕", en:"Tea Room", tr:"Çay Evi", kind:"flavor"},
+  {key:"lantern", icon:"🏮", en:"Lantern Alley", tr:"Fener Sokağı", kind:"word"},
+  {key:"rooftop", icon:"💌", en:"Rooftop Garden", tr:"Çatı Bahçesi", kind:"vault"},
+];
+
+const LOCATIONS = {
+  riad:{
+    answerCode:"Nw==",
+    title:{en:"Riad Courtyard", tr:"Riad Avlusu"},
+    flavor:{en:"Moonlight pools on the fountain at the center of the riad. The mosaic border repeats the same seven zellige symbols in an unbroken chain — diamond, star, diamond, star — until, near the far corner, one tile breaks the pattern entirely.",
+            tr:"Ay ışığı riadın ortasındaki çeşmenin üzerinde birikiyor. Mozaik kenarlık aynı yedi zellige sembolünü kesintisiz bir zincirde tekrarlıyor — baklava, yıldız, baklava, yıldız — ta ki uzak köşeye yakın bir yerde bir karo deseni tamamen bozana kadar."},
+    evidence:{en:"Held to the fountain's light, the postcard's pinholes spell N-O-R-T-H — the riad's north archway is the way in.",
+              tr:"Çeşmenin ışığına tutulunca kartpostalın delikleri K-U-Z-E-Y harflerini oluşturuyor — riadın kuzey kemeri giriş yolu."},
+    tiles:[0,1,0,1,0,1,"odd",1,0,1,0,1], // 0=diamond,1=star,"odd"=broken tile
+    hint:{en:"Count the tiles from the left, starting at 1. The broken one is not a diamond or a star.",
+          tr:"Karoları soldan başlayarak 1'den sayın. Bozuk olan ne baklava ne de yıldız."}
+  },
+  souk:{
+    answerCode:{en:"U0VDUkVU", tr:"R8SwWkzEsA=="},
+    title:{en:"Spice Souk", tr:"Baharat Çarşısı"},
+    flavor:{en:"Saffron, cardamom and dried rose sit in open sachets, each stitched with a small paper tag. One word on each tag has been pressed just a little harder than the rest.",
+            tr:"Safran, kakule ve kurutulmuş gül açık keselerde duruyor, her birine küçük bir kağıt etiket dikilmiş. Her etikette bir kelime diğerlerinden biraz daha kalın basılmış."},
+    evidence:{en:"Tucked beneath the saffron sachet, a small brass crescent is stamped with a single number: 2. Keep it — it belongs with another number from the Riad.",
+              tr:"Safran kesesinin altına sıkıştırılmış küçük pirinç bir hilalin üzerinde tek bir sayı damgalı: 2. Onu saklayın — Riad'dan bulacağınız başka bir sayıyla birlikte kullanılacak."},
+    sachets:{
+      en:[["SAFFRON","Sun-dried","on rooftops for three days before it ever reaches a jar."],
+          ["CARDAMOM","Every","pod cracked open by hand, never by machine."],
+          ["ROSE","Cut","at dawn, while the petals are still cool."],
+          ["MINT","Rolled","tight to keep the oil from fading in the heat."],
+          ["CINNAMON","Each","stick is exactly the width of two fingers."],
+          ["TURMERIC","Tints","the fingertips gold for a full day after."]],
+      tr:[["SAFRAN","Güneşte","çatılarda üç gün kurutulur, öyle kavanoza girer."],
+          ["KAKULE","İçindeki","taneler elle çıkarılır, hiç makineyle değil."],
+          ["GÜL","Zarafetle","toplanır, taç yaprakları hâlâ soğukken."],
+          ["NANE","Limon","kokusuyla karışır ama nane baskın çıkar."],
+          ["TARÇIN","İnce","ince kıyılır, her defasında aynı ölçüde."]]
+    },
+    hint:{en:"Read only the bold word on each tag, top to bottom.",
+          tr:"Yalnızca her etiketteki kalın kelimeyi, yukarıdan aşağı okuyun."}
+  },
+  tearoom:{
+    title:{en:"Tea Room", tr:"Çay Evi"},
+    flavor:{en:"Two glasses of mint tea arrive, poured from the same brass pot, and set on two different paper coasters. Each coaster carries half a sentence in the same careful handwriting.",
+            tr:"Aynı pirinç ibrikten doldurulmuş iki bardak nane çayı gelir ve iki farklı kağıt altlığın üzerine konur. Her altlıkta aynı özenli el yazısıyla yarım bir cümle yazılı."},
+    evidence:{en:"Player One's coaster: \"The best part of getting lost was finding...\" Player Two's: \"...the same way back to each other.\" Keep the full sentence in mind.",
+              tr:"Birinci oyuncunun altlığı: \"Kaybolmanın en güzel yanı, bulmaktı...\" İkinci oyuncununki: \"...birbirimize giden aynı yolu.\" Tam cümleyi aklınızda tutun."},
+  },
+  lantern:{
+    answerCode:{en:"VE9HRVRIRVI=", tr:"QsSwUkzEsEtURQ=="},
+    title:{en:"Lantern Alley", tr:"Fener Sokağı"},
+    flavor:{en:"Two cut-paper lanterns hang side by side, each throwing a pattern of holes onto the wall that means nothing on its own. Held up together and lit at the same time, the shadows overlap into something legible.",
+            tr:"İki kesme kağıt fener yan yana asılı, her biri duvara tek başına bir anlam ifade etmeyen bir delik deseni düşürüyor. Birlikte tutulup aynı anda aydınlatıldığında gölgeler üst üste binip okunabilir bir şey oluşturuyor."},
+    evidence:{en:"The combined shadow spells a single word — the same word this whole night has been quietly building toward.",
+              tr:"Birleşen gölge tek bir kelime yazıyor — bu gece boyunca sessizce inşa edilen o kelime."},
+    cardsEN:{a:["T","G","T","E"], b:["O","E","H","R"]},
+    cardsTR:{a:["B","R","İ","T"], b:["İ","L","K","E"]},
+    hint:{en:"Alternate: Card A's first letter, then Card B's first letter, and so on.",
+          tr:"Sırayla: önce A Kartı'nın ilk harfi, sonra B Kartı'nın ilk harfi, böyle devam edin."}
+  },
+  rooftop:{
+    title:{en:"Rooftop Garden", tr:"Çatı Bahçesi"},
+    flavor:{en:"A narrow stair opens onto a rooftop garden strung with fairy lights. A faded Polaroid, tucked into a plant pot, shows this same terrace years earlier, set for two.",
+            tr:"Dar bir merdiven, ışıl ışıl ışıklarla süslenmiş bir çatı bahçesine açılıyor. Bir saksıya sıkıştırılmış solmuş bir Polaroid, bu aynı terası yıllar önce, iki kişilik hazırlanmış haliyle gösteriyor."},
+    evidence:{en:"One table in the old photo is marked with a small star. Find that same table — a sealed envelope waits beneath it, numbered on the back.",
+              tr:"Eski fotoğrafta bir masa küçük bir yıldızla işaretli. O aynı masayı bulun — altında, arkasında bir numara yazan mühürlü bir zarf bekliyor."},
+  }
+};
+
+const STORAGE_KEY = "midnight-marrakech-progress-v1";
+const ENVELOPE_CODE = "NzI=";
+function decodeAnswer(code){
+  const bytes = Uint8Array.from(atob(code), c=>c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+function answerFor(key, lang=STATE.lang || 'en'){
+  const code = LOCATIONS[key].answerCode;
+  return decodeAnswer(typeof code === 'string' ? code : code[lang]);
+}
+function freshState(lang=null){
+  return {lang, screen:lang?'cover':'language', digit:null, wordSouk:null, wordLantern:null, hints:{}, visitedTearoom:false, memories:["","",""]};
+}
+function loadState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(!saved || !["en","tr",null].includes(saved.lang)) return freshState();
+    const clean = freshState(saved.lang);
+    const screens = ["language","cover","howto","mission","hub","riad","souk","tearoom","lantern","rooftop","solved","tryagain"];
+    clean.screen = screens.includes(saved.screen) ? saved.screen : (saved.lang?'cover':'language');
+    clean.digit = saved.digit === answerFor('riad','en') ? saved.digit : null;
+    clean.wordSouk = [answerFor('souk','en'), answerFor('souk','tr')].includes(saved.wordSouk) ? saved.wordSouk : null;
+    clean.wordLantern = [answerFor('lantern','en'), answerFor('lantern','tr')].includes(saved.wordLantern) ? saved.wordLantern : null;
+    clean.hints = saved.hints && typeof saved.hints === 'object' ? saved.hints : {};
+    clean.visitedTearoom = Boolean(saved.visitedTearoom);
+    clean.memories = Array.isArray(saved.memories) ? saved.memories.slice(0,3).map(v=>String(v||'').slice(0,180)) : ["","",""];
+    while(clean.memories.length < 3) clean.memories.push("");
+    if(clean.screen === 'solved' && !(clean.digit && clean.wordSouk && clean.wordLantern)) clean.screen = 'hub';
+    return clean;
+  }catch(error){ return freshState(); }
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }catch(error){ /* Storage can be blocked in private browsing. */ }
+}
+function escapeHtml(value){
+  return String(value).replace(/[&<>"']/g, char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+}
+
+let STATE = loadState();
+
+function L(obj){ return obj[STATE.lang || 'en']; }
+function setLang(l){
+  STATE.lang = l;
+  document.documentElement.lang = l;
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnTR').classList.toggle('active', l==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  if(STATE.screen === 'language') STATE.screen = 'cover';
+  saveState();
+  render();
+}
+function go(screen){
+  STATE.screen = screen;
+  if(screen === 'tearoom') STATE.visitedTearoom = true;
+  saveState();
+  window.scrollTo({top:0,behavior:'smooth'});
+  render();
+}
+function resetGame(){
+  const prompt = STATE.lang==='tr' ? 'Tüm ilerleme silinsin ve gece yeniden başlatılsın mı?' : 'Clear all progress and restart the evening?';
+  if(!window.confirm(prompt)) return;
+  const selectedLang = STATE.lang || 'en';
+  STATE = freshState(selectedLang);
+  saveState();
+  render();
+}
+function solvedCount(){ return (STATE.digit?1:0)+(STATE.wordSouk?1:0)+(STATE.wordLantern?1:0); }
+function allSolved(){ return solvedCount()===3; }
+function digitsOnly(input){ input.value = input.value.replace(/\D/g, '').slice(0,1); }
+
+function checkRiad(){
+  const input = document.getElementById('input_riad');
+  const fb = document.getElementById('fb_riad');
+  const val = (input.value||"").trim();
+  if(val === answerFor('riad')){
+    STATE.digit = val;
+    fb.textContent = L(T.correctDigit); fb.className = "feedback good"; input.disabled = true;
+  } else { fb.textContent = L(T.wrong); fb.className = "feedback bad"; }
+  saveState();
+  updateProgressPill();
+}
+function checkSouk(){
+  const input = document.getElementById('input_souk');
+  const fb = document.getElementById('fb_souk');
+  const val = (input.value||"").trim().toUpperCase();
+  const target = answerFor('souk');
+  if(val === target){
+    STATE.wordSouk = val;
+    fb.textContent = L(T.correctWord); fb.className = "feedback good"; input.disabled = true;
+  } else { fb.textContent = L(T.wrong); fb.className = "feedback bad"; }
+  saveState();
+  updateProgressPill();
+}
+function checkLantern(){
+  const input = document.getElementById('input_lantern');
+  const fb = document.getElementById('fb_lantern');
+  const val = (input.value||"").trim().toUpperCase();
+  const target = answerFor('lantern');
+  if(val === target){
+    STATE.wordLantern = val;
+    fb.textContent = L(T.correctWord); fb.className = "feedback good"; input.disabled = true;
+  } else { fb.textContent = L(T.wrong); fb.className = "feedback bad"; }
+  saveState();
+  updateProgressPill();
+}
+function toggleHint(key){
+  STATE.hints[key] = !STATE.hints[key];
+  saveState();
+  document.getElementById('hint_'+key).classList.toggle('open', STATE.hints[key]);
+  document.getElementById('hintbtn_'+key).textContent = STATE.hints[key] ? L(T.hideHint) : L(T.showHint);
+}
+function checkEnvelope(){
+  const v1 = document.getElementById('v1').value.trim();
+  const v2 = document.getElementById('v2').value.trim();
+  go((v1+v2 === decodeAnswer(ENVELOPE_CODE)) ? 'solved' : 'tryagain');
+}
+function updateMemory(index,value){ STATE.memories[index] = String(value||'').slice(0,180); saveState(); }
+function updateProgressPill(){
+  const pill = document.getElementById('progressPill');
+  if(!pill) return;
+  pill.textContent = solvedCount() + " / 3";
+}
+
+function renderLanguage(){
+  return `<div class="card language-card">
+    <div class="language-mark">✨</div>
+    <p class="eyebrow">MIDNIGHT IN MARRAKECH</p>
+    <h1 class="t">Choose Your Language<br>Dilini Seç</h1>
+    <div class="body"><p>Start the evening in English or Turkish.<br>Geceye İngilizce veya Türkçe başlayın.</p></div>
+    <div class="language-actions">
+      <button type="button" class="btn wide" onclick="setLang('en')">English</button>
+      <button type="button" class="btn wide" onclick="setLang('tr')">Türkçe</button>
+    </div>
+    <div class="offline-note">No installation required · Kurulum gerekmez · Works offline / Çevrimdışı çalışır · No data collected / Veri toplanmaz</div>
+  </div>`;
+}
+
+function renderCover(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'PRINT · PLAY · SOLVE':'YAZDIR · OYNA · ÇÖZ'}</p>
+    <h1 class="t">${STATE.lang==='en'?'Midnight in Marrakech':'Midnight in Marrakech'}</h1>
+    <div class="body"><p>${STATE.lang==='en'?'An unsigned postcard. A moonlit riad. One night to get lost together — a digital companion for two, alongside the print-and-play file.':'İmzasız bir kartpostal. Ay ışığında bir riad. Birlikte kaybolmak için bir gece — yazdır-ve-oyna dosyasının yanında, ikiniz için dijital bir yoldaş.'}</p></div>
+    <div class="offline-note">${STATE.lang==='en'?'No installation or account required. Works offline, saves progress on this device, and collects no data.':'Kurulum veya hesap gerekmez. Çevrimdışı çalışır, ilerlemeyi bu cihaza kaydeder ve veri toplamaz.'}</div>
+    <div class="choices"><button type="button" class="btn wide" onclick="go('howto')">${L(T.begin)}</button></div>
+  </div>`;
+}
+function renderHowTo(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'HOW TO PLAY':'NASIL OYNANIR'}</p>
+    <h2 class="t">${STATE.lang==='en'?'For the Two of You':'İkiniz İçin'}</h2>
+    <div class="body">
+      <p>${STATE.lang==='en'?'Visit each location together, gather evidence, and solve three ciphers. Then open the Rooftop envelope to read what was waiting for you.':'Her mekânı birlikte ziyaret edin, kanıt toplayın ve üç şifreyi çözün. Sonra sizi bekleyeni okumak için Çatı zarfını açın.'}</p>
+      <p style="font-family:'Poppins',Arial,sans-serif; font-size:12.5px; color:var(--muted);">${L(T.players)}</p>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('mission')">${L(T.cont)}</button></div>
+  </div>`;
+}
+function renderMission(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'THE EVENING':'BU GECE'}</p>
+    <h2 class="t">${STATE.lang==='en'?'For Two Travelers':'İki Yolcu İçin'}</h2>
+    <div class="body">
+      <p>${STATE.lang==='en'?"A hotel concierge hands you an unsigned postcard: \"For the two travelers who still know how to get lost together.\" There is no killer tonight — only a route, and a rooftop envelope waiting for two people who solve it together.":"Bir otel görevlisi elinize imzasız bir kartpostal tutuşturur: \"Birlikte kaybolmayı hâlâ bilen iki yolcuya.\" Bu gece bir katil yok — yalnızca bir rota, ve bunu birlikte çözen iki kişiyi bekleyen bir çatı zarfı var."}</p>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('hub')">${L(T.toHub)}</button></div>
+  </div>`;
+}
+function renderMap(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'MARRAKECH · AFTER DARK':'MARAKEŞ · GECE YARISI'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Five Locations to Visit':'Ziyaret Edilecek Beş Mekân'}</h2>
+    <div class="map-grid">
+      ${LOC_META.map(r=>{
+        let solved = false;
+        if(r.kind==='digit') solved = STATE.digit!==null;
+        else if(r.key==='souk') solved = STATE.wordSouk!==null;
+        else if(r.key==='lantern') solved = STATE.wordLantern!==null;
+        else if(r.key==='tearoom') solved = STATE.visitedTearoom;
+        else if(r.kind==='vault') solved = allSolved();
+        return `<div class="room-card" onclick="go('${r.key}')">${solved?'<span class="check">✓</span>':''}<div style="font-size:24px;">${r.icon}</div><div class="name">${r[STATE.lang]}</div></div>`;
+      }).join("")}
+    </div>
+  </div>`;
+}
+function renderRiad(){
+  const r = LOCATIONS.riad;
+  const solved = STATE.digit !== null;
+  const tileHtml = r.tiles.map((t,i)=>{
+    if(t==="odd") return `<div class="tile odd">◯<span class="num">${i+1}</span></div>`;
+    return `<div class="tile">${t===1?'✦':'◆'}<span class="num">${i+1}</span></div>`;
+  }).join("");
+  return `<div class="card">
+    <span class="loctag">${LOC_META[0][STATE.lang]}</span>
+    <h2 class="t">${r.title[STATE.lang]}</h2>
+    <div class="body"><p>${r.flavor[STATE.lang]}</p></div>
+    <div class="evbox"><div class="lbl">${STATE.lang==='en'?'Evidence':'Kanıt'}</div>${r.evidence[STATE.lang]}</div>
+    <div class="cluebox">
+      <div class="lbl">${STATE.lang==='en'?'Count the Mosaic':'Mozaiği Say'}</div>
+      <div class="tilerow" style="margin-top:18px;">${tileHtml}</div>
+    </div>
+    <div class="answer-row">
+      <input id="input_riad" class="digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="${STATE.lang==='en'?'Tile position':'Karo konumu'}" oninput="digitsOnly(this)" onkeydown="if(event.key==='Enter')checkRiad()" ${solved?'disabled value="'+answerFor('riad')+'"':''} placeholder="?">
+      <button type="button" class="btn" onclick="checkRiad()" ${solved?'disabled':''}>${L(T.checkBtn)}</button>
+      <span class="feedback ${solved?'good':''}" id="fb_riad" role="status" aria-live="polite">${solved?L(T.correctDigit):''}</span>
+    </div>
+    <div class="hint-toggle">
+      <button class="btn ghost" id="hintbtn_riad" onclick="toggleHint('riad')">${STATE.hints.riad?L(T.hideHint):L(T.showHint)}</button>
+      <div class="hint-body ${STATE.hints.riad?'open':''}" id="hint_riad">${r.hint[STATE.lang]}</div>
+    </div>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('hub')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderSouk(){
+  const r = LOCATIONS.souk;
+  const solved = STATE.wordSouk !== null;
+  const rows = r.sachets[STATE.lang];
+  const rowsHtml = rows.map(([name,bold,rest])=>`<div class="sachet-row"><span class="name">${name}</span><span><b>${bold}</b> ${rest}</span></div>`).join("");
+  return `<div class="card">
+    <span class="loctag">${LOC_META[1][STATE.lang]}</span>
+    <h2 class="t">${r.title[STATE.lang]}</h2>
+    <div class="body"><p>${r.flavor[STATE.lang]}</p></div>
+    <div class="evbox"><div class="lbl">${STATE.lang==='en'?'Evidence':'Kanıt'}</div>${r.evidence[STATE.lang]}</div>
+    <div class="cluebox">
+      <div class="lbl">${STATE.lang==='en'?'Read the Sachets':'Keseleri Oku'}</div>
+      ${rowsHtml}
+    </div>
+    <div class="answer-row">
+      <input id="input_souk" class="word" maxlength="10" autocomplete="off" spellcheck="false" aria-label="${STATE.lang==='en'?'Hidden word':'Gizli kelime'}" onkeydown="if(event.key==='Enter')checkSouk()" ${solved?'disabled value="'+answerFor('souk')+'"':''} placeholder="?">
+      <button type="button" class="btn" onclick="checkSouk()" ${solved?'disabled':''}>${L(T.checkBtn)}</button>
+      <span class="feedback ${solved?'good':''}" id="fb_souk" role="status" aria-live="polite">${solved?L(T.correctWord):''}</span>
+    </div>
+    <div class="hint-toggle">
+      <button class="btn ghost" id="hintbtn_souk" onclick="toggleHint('souk')">${STATE.hints.souk?L(T.hideHint):L(T.showHint)}</button>
+      <div class="hint-body ${STATE.hints.souk?'open':''}" id="hint_souk">${r.hint[STATE.lang]}</div>
+    </div>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('hub')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderTearoom(){
+  const r = LOCATIONS.tearoom;
+  return `<div class="card">
+    <span class="loctag">${LOC_META[2][STATE.lang]}</span>
+    <h2 class="t">${r.title[STATE.lang]}</h2>
+    <div class="body"><p>${r.flavor[STATE.lang]}</p></div>
+    <div class="evbox"><div class="lbl">${STATE.lang==='en'?'Evidence':'Kanıt'}</div>${r.evidence[STATE.lang]}</div>
+    <p style="font-family:'Poppins',Arial,sans-serif; font-size:11.5px; color:var(--muted);">${STATE.lang==='en'?'No cipher here — just a sentence worth remembering.':'Burada şifre yok — sadece hatırlanmaya değer bir cümle.'}</p>
+    <div class="choices"><button class="btn ghost wide" onclick="go('hub')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderLantern(){
+  const r = LOCATIONS.lantern;
+  const solved = STATE.wordLantern !== null;
+  const cards = STATE.lang==='tr' ? r.cardsTR : r.cardsEN;
+  const cardHtml = (arr)=>arr.map(l=>`<div class="lbox">${l}</div>`).join("");
+  return `<div class="card">
+    <span class="loctag">${LOC_META[3][STATE.lang]}</span>
+    <h2 class="t">${r.title[STATE.lang]}</h2>
+    <div class="body"><p>${r.flavor[STATE.lang]}</p></div>
+    <div class="evbox"><div class="lbl">${STATE.lang==='en'?'Evidence':'Kanıt'}</div>${r.evidence[STATE.lang]}</div>
+    <div class="cluebox">
+      <div class="lbl">${STATE.lang==='en'?'Alternate the Letters':'Harfleri Sırayla Okuyun'}</div>
+      <div class="lettercards">
+        <div class="lettercard"><div class="cap">${STATE.lang==='en'?'CARD A':'A KARTI'}</div><div class="boxes">${cardHtml(cards.a)}</div></div>
+        <div class="lettercard"><div class="cap">${STATE.lang==='en'?'CARD B':'B KARTI'}</div><div class="boxes">${cardHtml(cards.b)}</div></div>
+      </div>
+    </div>
+    <div class="answer-row">
+      <input id="input_lantern" class="word" maxlength="10" autocomplete="off" spellcheck="false" aria-label="${STATE.lang==='en'?'Hidden word':'Gizli kelime'}" onkeydown="if(event.key==='Enter')checkLantern()" ${solved?'disabled value="'+answerFor('lantern')+'"':''} placeholder="?">
+      <button type="button" class="btn" onclick="checkLantern()" ${solved?'disabled':''}>${L(T.checkBtn)}</button>
+      <span class="feedback ${solved?'good':''}" id="fb_lantern" role="status" aria-live="polite">${solved?L(T.correctWord):''}</span>
+    </div>
+    <div class="hint-toggle">
+      <button class="btn ghost" id="hintbtn_lantern" onclick="toggleHint('lantern')">${STATE.hints.lantern?L(T.hideHint):L(T.showHint)}</button>
+      <div class="hint-body ${STATE.hints.lantern?'open':''}" id="hint_lantern">${r.hint[STATE.lang]}</div>
+    </div>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('hub')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderRooftop(){
+  const r = LOCATIONS.rooftop;
+  const ready = allSolved();
+  const prompts = STATE.lang==='en' ? [
+    "Describe your first trip together in exactly three words.",
+    "Name one smell that instantly means \"home\" to both of you.",
+    "If tonight had a soundtrack, name the one song that has to be on it."
+  ] : [
+    "İlk birlikte çıktığınız yolculuğu tam olarak üç kelimeyle anlatın.",
+    "İkinize de anında \"ev\" hissi veren bir kokuyu söyleyin.",
+    "Bu gecenin bir müziği olsaydı, mutlaka çalması gereken tek bir şarkı söyleyin."
+  ];
+  return `<div class="card">
+    <span class="loctag">${LOC_META[4][STATE.lang]}</span>
+    <h2 class="t">${r.title[STATE.lang]}</h2>
+    <div class="body"><p>${r.flavor[STATE.lang]}</p></div>
+    <div class="evbox"><div class="lbl">${STATE.lang==='en'?'Evidence':'Kanıt'}</div>${r.evidence[STATE.lang]}</div>
+    <div class="cluebox">
+      <div class="lbl">${STATE.lang==='en'?'Memory Lock — answer separately, then compare':'Anı Kilidi — ayrı cevaplayın, sonra karşılaştırın'}</div>
+      ${prompts.map((p,i)=>`<div class="prompt-row"><div class="q">${i+1}. ${p}</div><textarea rows="1" maxlength="180" aria-label="${STATE.lang==='en'?'Memory answer':'Anı cevabı'} ${i+1}" oninput="updateMemory(${i},this.value)">${escapeHtml(STATE.memories[i])}</textarea></div>`).join("")}
+    </div>
+    <div class="dials">
+      <div class="dial ${STATE.digit?'':'empty'}">${STATE.digit||'?'}</div>
+      <div class="dial ${STATE.wordSouk?'':'empty'}">${STATE.wordSouk||'?'}</div>
+      <div class="dial ${STATE.wordLantern?'':'empty'}">${STATE.wordLantern||'?'}</div>
+    </div>
+    ${ready?`
+    <p style="text-align:center; font-family:'Poppins',Arial,sans-serif; font-size:12px; color:var(--muted);">${STATE.lang==='en'?'Combine the two numbers you found tonight into the envelope number.':'Bu gece bulduğunuz iki sayıyı zarf numarasında birleştirin.'}</p>
+    <div class="answer-row" style="justify-content:center;">
+      <input id="v1" class="digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="1" oninput="digitsOnly(this)" placeholder="?">
+      <input id="v2" class="digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="2" oninput="digitsOnly(this)" onkeydown="if(event.key==='Enter')checkEnvelope()" placeholder="?">
+    </div>
+    <div class="choices"><button class="btn wide" onclick="checkEnvelope()">${L(T.enterCode)}</button></div>`
+    : `<p style="text-align:center; font-family:'Poppins',Arial,sans-serif; font-weight:600; color:var(--muted);">${L(T.needAll)}</p>`}
+    <div class="choices"><button class="btn ghost wide" onclick="go('hub')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderSolved(){
+  return `<div class="card">
+    <div class="stamp">${STATE.lang==='en'?'Found You':'Seni Buldum'}</div>
+    <h2 class="t">${STATE.lang==='en'?'Envelope 72':'72 Numaralı Zarf'}</h2>
+    <div class="body"><p>${STATE.lang==='en'
+      ?'There was never a crime to solve — only a route, laid tile by tile, sachet by sachet, shadow by shadow, by someone who knew exactly how the two of you think. Envelope 72, taped beneath the starred table, holds a single card: "The best part of getting lost was finding the same way back to each other."'
+      :'Çözülecek bir suç hiç olmadı — yalnızca karo karo, kese kese, gölge gölge döşenmiş, ikinizi de tam olarak nasıl düşündüğünü bilen biri tarafından hazırlanmış bir rota vardı. Yıldızlı masanın altına bantlanmış 72 numaralı zarf, tek bir kart taşıyor: "Kaybolmanın en güzel yanı, birbirimize giden aynı yolu yeniden bulmaktı."'}</p></div>
+    <div class="choices"><button type="button" class="btn wide" onclick="resetGame()">${L(T.playAgain)}</button></div>
+  </div>`;
+}
+function renderTryAgain(){
+  return `<div class="card">
+    <div class="stamp" style="border-color:var(--muted); color:var(--muted);">${STATE.lang==='en'?'Not Yet!':'Henüz Değil!'}</div>
+    <h2 class="t">${STATE.lang==='en'?'The Envelope Stays Sealed':'Zarf Mühürlü Kalıyor'}</h2>
+    <div class="body"><p>${STATE.lang==='en'
+      ?"That number doesn't match. Double-check the tile position and the brass token, then try again."
+      :"Bu numara uyuşmuyor. Karo konumunu ve pirinç jetonu tekrar kontrol edip yeniden deneyin."}</p></div>
+    <div class="choices">
+      <button class="btn wide" onclick="go('rooftop')">${STATE.lang==='en'?'Try Again':'Tekrar Dene'}</button>
+      <button type="button" class="btn ghost wide" onclick="resetGame()">${L(T.playAgain)}</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  document.documentElement.lang = STATE.lang || 'en';
+  document.getElementById('btnEN').classList.toggle('active', STATE.lang==='en');
+  document.getElementById('btnTR').classList.toggle('active', STATE.lang==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  let html = "";
+  if(STATE.screen==='language') html = renderLanguage();
+  else if(STATE.screen==='cover') html = renderCover();
+  else if(STATE.screen==='howto') html = renderHowTo();
+  else if(STATE.screen==='mission') html = renderMission();
+  else if(STATE.screen==='hub') html = renderMap();
+  else if(STATE.screen==='riad') html = renderRiad();
+  else if(STATE.screen==='souk') html = renderSouk();
+  else if(STATE.screen==='tearoom') html = renderTearoom();
+  else if(STATE.screen==='lantern') html = renderLantern();
+  else if(STATE.screen==='rooftop') html = renderRooftop();
+  else if(STATE.screen==='solved') html = renderSolved();
+  else if(STATE.screen==='tryagain') html = renderTryAgain();
+  app.innerHTML = html;
+  updateProgressPill();
+}
+render();
+</script>
+</body>
+</html>
