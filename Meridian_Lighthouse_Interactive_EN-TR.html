@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Meridian Lighthouse — Digital Puzzle File</title>
+<style>
+  :root{
+    --navy:#0f2436; --navy2:#173247; --teal:#1c3d3a; --gold:#c9a24a; --gold-light:#e0bd6f;
+    --rope:#b9986a; --rust:#a34a2f; --paper:#f2ead4; --paper2:#e9dfc0; --muted:#8c8064; --text:#211a10;
+    --shadow:0 20px 46px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:radial-gradient(ellipse at 50% -10%, #24556a 0%, var(--navy) 52%, #081723 100%), var(--navy);
+    color:var(--paper); font-family:Arial,'DejaVu Sans',sans-serif; min-height:100vh; }
+  #app{max-width:900px; margin:0 auto; padding:0 16px 70px;}
+
+  .filehead{ position:relative; height:78px; overflow:hidden; margin-bottom:22px;
+    background:linear-gradient(180deg, #142c40 0%, var(--navy) 100%);
+    border-bottom:1px solid rgba(201,162,74,.4); display:flex; align-items:center; justify-content:center; }
+  .compassmark{ position:absolute; left:22px; top:50%; transform:translate(0,-50%); width:42px; height:42px; border-radius:50%;
+    border:1.5px solid var(--gold); }
+  .compassmark i{ position:absolute; left:50%; top:50%; width:1.4px; background:var(--gold); transform-origin:0 0;}
+  .compassmark .n{ height:16px; transform:translate(-50%,-100%) rotate(0deg);}
+  .compassmark .e{ height:16px; transform:translate(-50%,-100%) rotate(90deg);}
+  .compassmark .s{ height:16px; transform:translate(-50%,-100%) rotate(180deg);}
+  .compassmark .w{ height:16px; transform:translate(-50%,-100%) rotate(270deg);}
+  .brand-text{font-family:Georgia,'DejaVu Serif',serif; font-weight:700; font-size:18px; color:var(--paper); letter-spacing:.02em; text-align:center;}
+  .brand-sub{display:block; font-family:Arial,'DejaVu Sans',sans-serif; font-weight:600; font-size:9px; color:var(--gold-light); letter-spacing:.12em; margin-top:2px;}
+  .topbar-right{position:absolute; right:16px; top:50%; transform:translateY(-50%); display:flex; align-items:center; gap:10px;}
+  .lang-toggle{display:flex; border:1px solid var(--gold); border-radius:20px; overflow:hidden;}
+  .lang-toggle button{background:transparent; border:none; color:var(--muted); padding:5px 13px; font-family:'Poppins'; font-weight:700; font-size:11.5px; cursor:pointer;}
+  .lang-toggle button.active{background:var(--gold); color:#12202b;}
+  .progress-pill{ font-family:Arial,'DejaVu Sans',sans-serif; font-weight:600; font-size:11px; color:var(--paper); border:1px solid #4da9ad; background:rgba(19,75,83,.55); padding:5px 12px; border-radius:20px;}
+  .reset-btn{background:transparent;border:1px solid rgba(224,189,111,.55);color:var(--gold-light);padding:5px 9px;border-radius:18px;font:700 10px Arial,sans-serif;cursor:pointer;}
+
+  .card{ background:var(--paper); color:var(--text); border-radius:2px; padding:32px 28px 26px; box-shadow:var(--shadow); border:1px solid var(--gold); position:relative; animation:fadeUp .45s ease; overflow:hidden; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  .eyebrow{ font-family:'Poppins'; font-weight:700; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--rust); margin:0 0 10px; }
+  h1.t{ font-family:Georgia,'DejaVu Serif',serif; font-weight:700; font-size:clamp(21px,3.8vw,30px); color:#0c2733; margin:0 0 16px; line-height:1.25; }
+  h2.t{ font-family:Georgia,'DejaVu Serif',serif; font-weight:700; font-size:19px; color:#0c2733; margin:0 0 12px; }
+  .body p{ font-size:14px; line-height:1.75; color:var(--text); margin:0 0 14px; }
+  .tag{ display:inline-block; font-family:'Poppins'; font-weight:700; font-size:10.5px; letter-spacing:.08em; color:#fff; background:var(--teal); padding:4px 12px; border-radius:2px; margin-bottom:10px; }
+  .docbox{ border:1.4px solid var(--navy); border-radius:2px; padding:14px 16px; margin:12px 0; background:var(--paper2); }
+  .docbox .lbl{ font-family:'Poppins'; font-weight:700; font-size:9.5px; color:var(--rust); text-transform:uppercase; letter-spacing:.06em; margin:0 0 6px; border-bottom:1px dashed var(--rust); padding-bottom:5px; }
+  .docbox p{ margin:0 0 5px; }
+  .itemlist{ list-style:none; margin:10px 0; padding:0; }
+  .itemlist li{ font-size:13.5px; line-height:1.6; padding:6px 0 6px 18px; position:relative; border-bottom:.5px dotted rgba(0,0,0,.15); }
+  .itemlist li::before{ content:"⚓"; position:absolute; left:0; top:6px; font-size:9px; color:var(--rust); }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin:16px 0 8px; }
+  .loc-card{ background:var(--navy2); border:1px solid var(--teal); border-radius:2px; padding:15px 12px; text-align:center; cursor:pointer; transition:.15s; color:var(--paper); position:relative; }
+  .loc-card:hover{ background:var(--gold); border-color:var(--gold-light); color:#12202b; }
+  .loc-card.done{ opacity:.55; }
+  .loc-card .name{ font-family:'Poppins'; font-weight:700; font-size:12px; }
+  .loc-card .check{ position:absolute; top:6px; right:8px; color:var(--gold-light); font-size:13px; }
+  .section-label{ font-family:'Poppins'; font-weight:700; font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--rust); margin:22px 0 4px; }
+  .progress-line{ font-family:'Poppins'; font-size:12px; color:var(--muted); margin-top:4px; }
+  .btn{ background:var(--navy); color:var(--paper); border:1px solid var(--gold); border-radius:2px; padding:11px 18px; font-family:'Poppins'; font-weight:700; font-size:13.5px; cursor:pointer; transition:.15s; }
+  .btn:hover{ background:var(--gold); color:#12202b; }
+  .btn.wide{ width:100%; }
+  .btn.ghost{ background:transparent; color:var(--rust); border:1px solid var(--rust); }
+  .choices{ display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+  .accuse-cta{ margin-top:24px; width:100%; background:var(--rust); color:#fff; border:1px solid #b85a3d; border-radius:2px; padding:14px; font-family:'Cinzel',serif; font-weight:700; font-size:15px; cursor:pointer; letter-spacing:.02em;}
+  .accuse-cta:disabled{ background:#8a8064; border-color:#9a9070; color:#e0dccc; cursor:not-allowed; }
+  .stamp{ display:inline-block; border:3px solid var(--rust); color:var(--rust); font-family:'Cinzel',serif; font-weight:700; letter-spacing:.05em; padding:8px 18px; transform:rotate(-3deg); border-radius:2px; margin:8px 0 18px; font-size:14px; }
+  .morseline{ font-family:'DejaVu Sans Mono',monospace; font-size:20px; letter-spacing:4px; color:var(--navy); background:var(--paper2); border:1px solid var(--navy); padding:14px; margin:14px 0; text-align:center; }
+  .morsekey{ font-family:'DejaVu Sans Mono',monospace; font-size:10.5px; line-height:1.9; color:#453c28; background:var(--paper2); border:1px solid var(--gold); padding:10px 12px; margin-top:10px; }
+  .digitinput{ width:64px; height:64px; font-size:26px; text-align:center; border:2px solid var(--navy); border-radius:4px; background:var(--paper2); color:var(--navy); font-family:'DejaVu Sans Mono',monospace; margin:14px auto; display:block; }
+  .hintbtn{ background:transparent; border:1px dashed var(--muted); color:var(--muted); font-family:'Poppins'; font-size:11.5px; padding:7px 12px; border-radius:20px; cursor:pointer; margin-top:10px; }
+  .hinttext{ margin-top:10px; font-size:12.5px; font-style:italic; color:var(--teal); background:var(--paper2); border-left:3px solid var(--teal); padding:8px 12px; }
+  .trackrow{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:10px 0; padding:10px 12px; background:var(--paper2); border:1px solid var(--navy); border-radius:2px; }
+  .trackname{ font-weight:700; font-size:12.5px; color:var(--navy); }
+  .trackval{ font-family:'DejaVu Sans Mono',monospace; font-size:18px; font-weight:700; color:var(--rust); min-width:24px; text-align:center; }
+  .codebox{ text-align:center; font-family:'DejaVu Sans Mono',monospace; letter-spacing:8px; font-size:22px; color:var(--rust); border:1px solid var(--gold); background:var(--paper2); padding:14px; margin-top:16px; }
+  .starmap{ width:100%; margin-top:8px; background:linear-gradient(180deg,#0d2a3b,#153c4c); border:1px solid var(--gold); border-radius:8px; padding:8px; }
+  .feedback{min-height:18px;text-align:center;font:700 12px Arial,sans-serif;margin:4px 0 8px;}
+  .feedback.good{color:#146b62}.feedback.bad{color:#a33d2f}
+  .beamline{height:7px;margin:18px -28px -26px;background:linear-gradient(90deg,var(--rust),var(--gold-light),#77c8c4,var(--gold-light),var(--rust));box-shadow:0 -10px 30px rgba(119,200,196,.24)}
+  @media (max-width:520px){ .card{padding:22px 18px 20px;} }
+</style>
+</head>
+<body>
+<div class="filehead">
+  <div class="compassmark"><i class="n"></i><i class="e"></i><i class="s"></i><i class="w"></i></div>
+  <div>
+    <div class="brand-text" id="brandLabel">The Meridian Lighthouse<span class="brand-sub" id="brandSub">FINCH EXPEDITION SOCIETY</span></div>
+  </div>
+  <div class="topbar-right">
+    <div class="progress-pill" id="progressPill">·</div>
+    <button class="reset-btn" id="resetBtn" onclick="resetGame()">RESET</button>
+    <div class="lang-toggle">
+      <button id="btnEN" class="active" onclick="setLang('en')">EN</button>
+      <button id="btnTR" onclick="setLang('tr')">TR</button>
+    </div>
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+const T = {
+  brand:{en:"The Meridian Lighthouse", tr:"Meridian Deniz Feneri"},
+  brandSub:{en:"FINCH EXPEDITION SOCIETY", tr:"FINCH KEŞİF TOPLULUĞU"},
+  fileOpen:{en:"Open the Sealed File", tr:"Mühürlü Dosyayı Aç"},
+  toGate:{en:"Continue", tr:"Devam Et"},
+  toFile:{en:"Begin the Search", tr:"Aramaya Başla"},
+  hubTitle:{en:"The Lighthouse", tr:"Deniz Feneri"},
+  hubHint:{en:"Search both locations and solve every puzzle before you check your code.", tr:"Kodunuzu kontrol etmeden önce her iki mekânı da arayın ve tüm bilmeceleri çözün."},
+  scenes:{en:"Locations", tr:"Mekânlar"},
+  puzzles:{en:"Puzzles", tr:"Bilmeceler"},
+  checkCode:{en:"Check the Code", tr:"Kodu Kontrol Et"},
+  checkLocked:{en:"Search and solve everything first", tr:"Önce her şeyi arayın ve çözün"},
+  back:{en:"◂ Back to the File", tr:"◂ Dosyaya Dön"},
+  visited:{en:"Explored", tr:"İncelendi"},
+  gateEyebrow:{en:"Before You Begin", tr:"Başlamadan Önce"},
+  gateTitle:{en:"Access Gate", tr:"Giriş Kapısı"},
+  gateBody:{en:"This file is sealed to anyone outside the Society. If you completed The Cartographer's Vault, you already hold the word that opens it. Write it below \u2014 consider it a formality, but a necessary one.",
+             tr:"Bu dosya, Topluluk dışındaki herkese kapalıdır. Haritacının Kasası'nı tamamladıysanız, onu açan kelimeye zaten sahipsiniz. Aşağıya yazın \u2014 bir formalite sayın, ama gerekli bir formalite."},
+  gatePlaceholder:{en:"The word from the vault...", tr:"Kasadan gelen kelime..."},
+  hintReveal:{en:"Reveal Hint", tr:"İpucunu Göster"},
+  enterDigit:{en:"Enter the digit you found:", tr:"Bulduğunuz rakamı girin:"},
+  save:{en:"Save Digit", tr:"Rakamı Kaydet"},
+  codeCorrect:{en:"The code is correct.", tr:"Kod doğru."},
+  codeWrong:{en:"That code doesn't fit. Recheck your four digits against the puzzles.", tr:"Bu kod uymuyor. Dört rakamınızı bilmecelerle tekrar kontrol edin."},
+  playAgain:{en:"Reopen the File", tr:"Dosyayı Yeniden Aç"},
+  correct:{en:"Correct — the lens locks into position.",tr:"Doğru — mercek yerine kilitlendi."},
+  wrong:{en:"That digit does not match the evidence.",tr:"Bu rakam kanıtla eşleşmiyor."},
+  reset:{en:"RESET",tr:"SIFIRLA"},
+  resetConfirm:{en:"Erase the lighthouse's saved progress and begin again?",tr:"Deniz fenerindeki kayıtlı ilerleme silinsin ve yeniden başlansın mı?"},
+};
+const LOC_META = {
+  keeper:{en:"The Keeper's Room", tr:"Bekçinin Odası"},
+  stair:{en:"The Spiral Stair", tr:"Sarmal Merdiven"},
+};
+const LOCATIONS = {
+  keeper:{en:[
+    "Salt has eaten at the window frames. A logbook lies open on a narrow desk, its last entries written in a hand that grows more hurried toward the bottom of the page. A brass telescope points out to sea through a cracked pane.",
+    "On the wall, a tide chart and a chalk-drawn star map, both marked with the same small symbol Finch used in his study \u2014 a compass rose. A cold draft moves through the room from somewhere that isn't the window.",
+    "<b>Logbook fragment:</b> \u201c...tide again at eight past. If the Society sends anyone after me, tell them the signal lamp still works. Tell them to listen before they climb.\u201d"
+  ], tr:[
+    "Tuz, pencere çerçevelerini aşındırmış. Dar bir masanın üzerinde açık bir günlük duruyor; son kayıtları, sayfanın altına doğru gittikçe daha aceleci bir elle yazılmış. Çatlak bir camdan denize doğru bakan pirinç bir teleskop var.",
+    "Duvarda, Finch'in çalışma odasında kullandığı aynı küçük sembolle \u2014 bir pusula gülüyle \u2014 işaretlenmiş bir gelgit tablosu ve tebeşirle çizilmiş bir yıldız haritası. Odada pencereden gelmeyen soğuk bir hava akımı var.",
+    "<b>Günlük parçası:</b> \u201c...gelgit yine sekizi geçe. Topluluk peşimden birini gönderirse, sinyal lambasının hâlâ çalıştığını söyleyin. Tırmanmadan önce dinlemelerini söyleyin.\u201d"
+  ]},
+  stair:{en:[
+    "One hundred and eight iron steps wind up the inside of the lighthouse wall, each one numbered in chalk by some bored keeper decades past. Rope has been strung along the rail where the iron gave way to rust.",
+    "Halfway up, a landing holds a coil of old ship's rope, gone stiff with salt, and a small brass plaque engraved with a single compass rose and no words. Scratches on the wall at shoulder height are evenly spaced, like a tally kept by hand.",
+    "At the top, a heavy door stands ajar. Beyond it: the lamp room, and whatever Finch left waiting there."
+  ], tr:[
+    "Yüz sekiz demir basamak, deniz fenerinin iç duvarı boyunca sarmal olarak yükseliyor; her biri on yıllar önce sıkılmış bir bekçi tarafından tebeşirle numaralandırılmış. Demirin pasla teslim olduğu yerlerde korkuluk boyunca halat gerilmiş.",
+    "Yarısına gelindiğinde bir sahanlıkta, tuzdan sertleşmiş eski bir gemi halatı ve tek bir pusula gülü dışında hiçbir yazı taşımayan küçük bir pirinç levha var. Omuz hizasında, eşit aralıklarla çizikler, sanki elle tutulan bir sayım gibi.",
+    "Tepede, ağır bir kapı aralık duruyor. Ardında: lamba odası ve Finch'in orada bıraktığı her ne ise."
+  ]},
+};
+const PUZZLE_META = {
+  signal:{en:"The Signal Log", tr:"Sinyal Günlüğü"},
+  tide:{en:"The Tide Chart", tr:"Gelgit Tablosu"},
+  rope:{en:"The Loose Rope", tr:"Gevşek Halat"},
+  starmap:{en:"The Star Map", tr:"Yıldız Haritası"},
+};
+const PUZZLE_LOCK = {signal:"OQ==", tide:"OA==", rope:"NA==", starmap:"Mg=="};
+const PUZZLES = {
+  signal:{en:"The lighthouse once used a signal lamp to flash messages to passing ships in Morse code. A fragment of the keeper's signal log survives below, spelling a single number word. Use the Morse key to decode it, then convert the word to a digit.",
+          tr:"Deniz feneri bir zamanlar geçen gemilere mors alfabesiyle sinyal vermek için bir lamba kullanırdı. Bekçinin sinyal günlüğünden bir parça aşağıda, tek bir sayı kelimesini heceliyor. Mors anahtarını kullanarak çözün, sonra kelimeyi bir rakama çevirin.",
+          extra:'<div class="morseline">&minus;&middot; &middot;&middot; &minus;&middot; &middot;</div><div class="morsekey">A .- &nbsp; B -... &nbsp; C -.-. &nbsp; D -.. &nbsp; E . &nbsp; F ..-. &nbsp; G --. &nbsp; H .... &nbsp; I .. &nbsp; J .--- &nbsp; K -.- &nbsp; L .-.. &nbsp; M --<br>N -. &nbsp; O --- &nbsp; P .--. &nbsp; Q --.- &nbsp; R .-. &nbsp; S ... &nbsp; T - &nbsp; U ..- &nbsp; V ...- &nbsp; W .-- &nbsp; X -..- &nbsp; Y -.-- &nbsp; Z --..</div>',
+          hint:{en:"In Morse, a dash is long and a dot is short. Decode each letter separately, then read the number word aloud.", tr:"Morse'ta çizgi uzun, nokta kısadır. Her harfi ayrı ayrı çözüp sayı kelimesini yüksek sesle okuyun."}},
+  tide:{en:"The keeper logged high tide at 2:00, and then twice more, each exactly eight hours after the last. What hour (as a single digit, ignoring AM/PM) does the third high tide fall on?",
+        tr:"Bekçi, gelgit yüksekliğini saat 2:00'de kaydetmiş, sonra bir öncekinden tam sekiz saat sonra olacak şekilde iki kez daha kaydetmiş. Üçüncü yüksek gelgit hangi saate denk geliyor (tek rakam olarak, saatin son hanesini yazın)?",
+        extra:"", hint:{en:"2:00, then +8 hours, then +8 hours again. Keep going past midnight if you need to, and just take the last digit of the hour.", tr:"2:00, sonra +8 saat, sonra tekrar +8 saat. Gerekirse gece yarısını geçin, sadece saatin son hanesini alın."}},
+  rope:{en:"Unscramble these letters to find a word every sailor knows: L \u2013 A \u2013 I \u2013 S. Count the letters in your answer. That count is your digit.",
+        tr:"Her denizcinin bildiği bir kelimeyi bulmak için şu harfleri çözün: L \u2013 A \u2013 I \u2013 S (kelime İngilizce 'yelken' anlamına geliyor). Cevabınızdaki harfleri sayın. Bu sayı sizin rakamınız.",
+        extra:"", hint:{en:"The word describes the large canvas that catches the wind on a ship.", tr:"Bu kelime, bir geminin rüzgarı yakalayan büyük bez yüzeyini tanımlar."}},
+  starmap:{en:"Scattered across the chalk star map are small marks. Most are plain dots \u2014 but a few are tiny anchors, Finch's second mark. Count only the anchors. That count is your digit.",
+        tr:"Aşağıdaki tebeşir yıldız haritasına serpiştirilmiş küçük işaretler var. Çoğu düz nokta \u2014 ama birkaçı Finch'in ikinci işareti olan minik çapalar. Sadece çapaları sayın. Bu sayı sizin rakamınız.",
+        extra:'<svg class="starmap" viewBox="0 0 300 140"><circle cx="30" cy="30" r="2" fill="#211a10"/><circle cx="70" cy="55" r="2" fill="#211a10"/><circle cx="120" cy="20" r="2" fill="#211a10"/><circle cx="160" cy="70" r="2" fill="#211a10"/><circle cx="200" cy="35" r="2" fill="#211a10"/><circle cx="250" cy="60" r="2" fill="#211a10"/><circle cx="90" cy="100" r="2" fill="#211a10"/><circle cx="270" cy="20" r="2" fill="#211a10"/><circle cx="40" cy="110" r="2" fill="#211a10"/><circle cx="180" cy="110" r="2" fill="#211a10"/><text x="55" y="80" font-size="15" fill="#a34a2f">&#9875;</text><text x="150" y="35" font-size="15" fill="#a34a2f">&#9875;</text></svg>',
+        hint:{en:"Ignore every plain dot. Look only for a small circle with a curved hook beneath it.", tr:"Her düz noktayı göz ardı edin. Sadece altında kavisli bir kancası olan küçük bir daire arayın."}},
+};
+
+const STORAGE_KEY="meridian-lighthouse-progress-v2";
+function freshState(){return {lang:"en",screen:"cover",visited:new Set(),digits:{},hintsShown:new Set(),gateWord:"",codeResult:null};}
+function loadState(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(!raw||!["en","tr"].includes(raw.lang)) return freshState();
+    const base=freshState();
+    return {...base,...raw,visited:new Set(raw.visited||[]),hintsShown:new Set(raw.hintsShown||[]),digits:{...raw.digits}};
+  }catch(_){return freshState();}
+}
+function saveState(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify({...STATE,visited:[...STATE.visited],hintsShown:[...STATE.hintsShown]}));}catch(_){}
+}
+function answerFor(key){return atob(PUZZLE_LOCK[key]);}
+let STATE = loadState();
+function L(obj){ return obj[STATE.lang]; }
+function resetGame(){
+  if(!confirm(L(T.resetConfirm))) return;
+  const lang=STATE.lang;localStorage.removeItem(STORAGE_KEY);STATE=freshState();STATE.lang=lang;saveState();render();window.scrollTo({top:0,behavior:'smooth'});
+}
+function setLang(l){
+  STATE.lang = l;
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnTR').classList.toggle('active', l==='tr');
+  document.getElementById('brandLabel').innerHTML = L(T.brand)+'<span class="brand-sub" id="brandSub">'+L(T.brandSub)+'</span>';
+  saveState(); render();
+}
+function go(id){
+  if(LOCATIONS[id] || PUZZLES[id]) STATE.visited.add(id);
+  STATE.screen = id;
+  saveState();
+  window.scrollTo({top:0,behavior:'smooth'});
+  render();
+}
+function allExplored(){
+  return Object.keys(LOC_META).every(k=>STATE.visited.has(k)) && Object.keys(PUZZLE_META).every(k=>STATE.visited.has(k));
+}
+function readyForLamp(){return allExplored()&&Object.keys(PUZZLE_META).every(k=>STATE.digits[k]===answerFor(k));}
+function saveDigit(key){
+  const el = document.getElementById('digitinput_'+key);
+  const fb=document.getElementById('fb_'+key);
+  const value=el?(el.value||'').trim():'';
+  if(value===answerFor(key)){
+    STATE.digits[key]=value;saveState();fb.textContent=L(T.correct);fb.className='feedback good';
+    setTimeout(()=>go('hub'),450);
+  }else{fb.textContent=L(T.wrong);fb.className='feedback bad';}
+}
+function showHint(key){ STATE.hintsShown.add(key); saveState(); render(); }
+function checkCode(){
+  const order = ["signal","tide","rope","starmap"];
+  const entered = order.map(k=>STATE.digits[k]||"?").join("");
+  const correct = order.map(k=>answerFor(k)).join("");
+  STATE.codeResult = (entered===correct) ? "correct" : "wrong";
+  saveState();
+  go('checkresult');
+}
+
+function renderHub(){
+  const locKeys = Object.keys(LOC_META), pzKeys = Object.keys(PUZZLE_META);
+  const doneCount = locKeys.filter(k=>STATE.visited.has(k)).length + pzKeys.filter(k=>STATE.visited.has(k)).length;
+  const total = locKeys.length + pzKeys.length;
+  const ready = readyForLamp();
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'THE FILE':'DOSYA'}</p>
+    <h1 class="t">${L(T.hubTitle)}</h1>
+    <p style="font-family:'Poppins'; font-size:13px; color:var(--muted); margin:0 0 6px;">${L(T.hubHint)}</p>
+    <div class="section-label">⚓ ${L(T.scenes)}</div>
+    <div class="grid">${locKeys.map(k=>`<div class="loc-card ${STATE.visited.has(k)?'done':''}" onclick="go('${k}')">${STATE.visited.has(k)?'<span class="check">✓</span>':''}<span class="name">${LOC_META[k][STATE.lang]}</span></div>`).join("")}</div>
+    <div class="section-label">🔦 ${L(T.puzzles)}</div>
+    <div class="grid">${pzKeys.map(k=>`<div class="loc-card ${STATE.visited.has(k)?'done':''}" onclick="go('${k}')">${STATE.visited.has(k)?'<span class="check">✓</span>':''}<span class="name">${PUZZLE_META[k][STATE.lang]}${STATE.digits[k]?(' — '+STATE.digits[k]):''}</span></div>`).join("")}</div>
+    <p class="progress-line">${doneCount}/${total} ${L(T.visited)}</p>
+    <button class="accuse-cta" ${ready?'':'disabled'} onclick="${ready?"checkCode()":''}">🔓 ${ready?L(T.checkCode):L(T.checkLocked)}</button>
+  </div>`;
+}
+function renderLocation(id){
+  return `<div class="card">
+    <span class="tag">${LOC_META[id][STATE.lang]}</span>
+    <h2 class="t">${LOC_META[id][STATE.lang]}</h2>
+    <div class="body">${LOCATIONS[id][STATE.lang].map(p=>`<p>${p}</p>`).join("")}</div>
+    <div class="choices"><button class="btn ghost wide" onclick="go('hub')">${L(T.back)}</button></div>
+  </div>`;
+}
+function renderPuzzle(id){
+  const p = PUZZLES[id];
+  const hintShown = STATE.hintsShown.has(id);
+  const savedVal = STATE.digits[id] || "";
+  return `<div class="card">
+    <span class="tag">${PUZZLE_META[id][STATE.lang]}</span>
+    <h2 class="t">${PUZZLE_META[id][STATE.lang]}</h2>
+    <div class="body"><p>${p[STATE.lang]}</p></div>
+    ${p.extra||""}
+    <p style="font-family:'Poppins'; font-weight:700; font-size:12px; color:var(--navy); margin-top:14px;">${L(T.enterDigit)}</p>
+    <input type="text" maxlength="1" inputmode="numeric" id="digitinput_${id}" class="digitinput" value="${savedVal}">
+    <div class="feedback ${savedVal?'good':''}" id="fb_${id}">${savedVal?L(T.correct):''}</div>
+    <button class="btn wide" onclick="saveDigit('${id}')">${L(T.save)}</button>
+    <button class="hintbtn" onclick="showHint('${id}')">💡 ${L(T.hintReveal)}</button>
+    ${hintShown?`<div class="hinttext">${p.hint[STATE.lang]}</div>`:""}
+    <div class="choices"><button class="btn ghost wide" onclick="go('hub')">${L(T.back)}</button></div>
+  </div>`;
+}
+function renderCheckResult(){
+  const order = ["signal","tide","rope","starmap"];
+  const codeStr = order.map(k=>STATE.digits[k]||"?").join(" \u2013 ");
+  if(STATE.codeResult==='correct'){
+    return `<div class="card">
+      <div class="stamp">${STATE.lang==='en'?'CODE VERIFIED':'KOD DOĞRULANDI'}</div>
+      <h1 class="t">${STATE.lang==='en'?'The Lamp Room':'Lamba Odası'}</h1>
+      <div class="codebox">${codeStr}</div>
+      <div class="body" style="margin-top:14px;">
+      <p>${STATE.lang==='en'
+        ?"The old lamp mechanism releases with a groan, and a small hatch in its base swings open. Inside is a sealed brass tube, and inside that, one final page in Finch's hand — shakier now, but unmistakably his."
+        :"Eski lamba mekanizması bir inilti ile serbest kalır ve tabanındaki küçük bir kapak açılır. İçinde mühürlü pirinç bir tüp, onun içinde de Finch'in el yazısıyla yazılmış son bir sayfa var — artık daha titrek ama kesinlikle onun eli."}</p>
+      <p>${STATE.lang==='en'
+        ?"It describes a second coordinate, further north, and a line crossed out twice as though he changed his mind about writing it down at all. Beneath it, underlined once: LONGITUDE."
+        :"Daha kuzeyde ikinci bir koordinattan bahsediyor, ve sanki onu hiç yazmamayı düşünmüş gibi iki kez üzeri çizilmiş bir satır var. Altında, bir kez altı çizilmiş: LONGITUDE."}</p>
+      </div>
+      <div class="docbox"><div class="lbl">${STATE.lang==='en'?'Carry Forward':'Yanınıza Alın'}</div>
+      <p>${STATE.lang==='en'?"Keep the word LONGITUDE. Whatever Finch found at the end of his search, he split the way there into pieces on purpose — and this is the next one.":"LONGITUDE kelimesini saklayın. Finch aramasının sonunda her ne bulduysa, oraya giden yolu bilerek parçalara ayırmış — ve bu bir sonraki parça."}</p></div>
+      <p class="body" style="font-style:italic; margin-top:10px;">${STATE.lang==='en'?'The light goes dark again.':'Işık yeniden söner.'}</p>
+      <div class="choices"><button class="btn wide" onclick="resetGame()">↺ ${L(T.playAgain)}</button></div>
+    </div>`;
+  }
+  return `<div class="card">
+    <div class="stamp" style="border-color:var(--muted); color:var(--muted);">${STATE.lang==='en'?'NOT YET':'HENÜZ DEĞİL'}</div>
+    <h1 class="t">${STATE.lang==='en'?'The Lock Holds':'Kilit Direniyor'}</h1>
+    <div class="codebox">${codeStr}</div>
+    <p class="body" style="margin-top:14px;">${L(T.codeWrong)}</p>
+    <div class="choices"><button class="btn wide" onclick="go('hub')">${L(T.back)}</button></div>
+  </div>`;
+}
+function renderCover(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'SEALED FOLLOW-UP FILE':'MÜHÜRLÜ DEVAM DOSYASI'}</p>
+    <h1 class="t">${STATE.lang==='en'?"The Meridian Lighthouse":"Meridian Deniz Feneri"}</h1>
+    <div class="body"><p>${STATE.lang==='en'
+      ?'You found the word. Now find what it was guarding. A lighthouse on a spit of rock, decommissioned decades ago, holds four puzzles and a locked lamp room. Solve them, assemble the code, and see what Finch left behind.'
+      :'Kelimeyi buldun. Şimdi onun neyi koruduğunu bul. On yıllar önce hizmet dışı bırakılmış bir kayalıktaki deniz feneri, dört bilmece ve kilitli bir lamba odası barındırıyor. Onları çözün, kodu oluşturun ve Finch\'in ne bıraktığını görün.'}</p></div>
+    <div class="choices"><button class="btn wide" onclick="go('gate')">${L(T.fileOpen)}</button></div>
+  </div>`;
+}
+function renderGate(){
+  return `<div class="card">
+    <p class="eyebrow">${L(T.gateEyebrow)}</p>
+    <h1 class="t">${L(T.gateTitle)}</h1>
+    <div class="body"><p>${L(T.gateBody)}</p></div>
+    <div class="docbox"><div class="lbl">${STATE.lang==='en'?'STANDALONE NOTE':'BAĞIMSIZ OYUN NOTU'}</div><p>${STATE.lang==='en'?'If you played The Cartographer\'s Vault, enter its carry-forward word for atmosphere. New players may leave this blank; the lighthouse mystery is fully playable on its own.':'Haritacının Kasası\'nı oynadıysanız atmosfer için oradan gelen kelimeyi yazın. Yeni oyuncular boş bırakabilir; deniz feneri gizemi tek başına tamamen oynanabilir.'}</p></div>
+    <input type="text" id="gateword" value="${STATE.gateWord||''}" placeholder="${L(T.gatePlaceholder)}" style="width:100%; padding:12px 14px; font-size:14px; border:1.4px solid var(--navy); border-radius:2px; background:var(--paper2); color:var(--navy); font-family:Arial,sans-serif; margin-bottom:16px;">
+    <div class="choices"><button class="btn wide" onclick="continueGate()">${L(T.toGate)}</button></div>
+  </div>`;
+}
+function renderStory(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'FIELD NOTES · FINCH EXPEDITION SOCIETY':'SAHA NOTLARI · FINCH KEŞİF TOPLULUĞU'}</p>
+    <h1 class="t">${STATE.lang==='en'?'A Light Forty Years Dark':'Kırk Yıldır Karanlık Bir Işık'}</h1>
+    <div class="body">
+      <p>${STATE.lang==='en'
+        ?"The coordinate from Finch's vault led here — a lighthouse on a spit of rock so small it doesn't appear on most maps, decommissioned decades ago and never fully searched. Fishermen in the nearest harbor still call it \u201cthe dark light,\u201d and none of them will take a boat out to it after sundown."
+        :"Finch'in kasasından çıkan koordinat buraya götürdü — çoğu haritada görünmeyecek kadar küçük bir kayalıktaki bir deniz feneri, on yıllar önce hizmet dışı bırakılmış ve hiçbir zaman tam olarak aranmamış. En yakın limandaki balıkçılar hâlâ ona \u201ckaranlık fener\u201d diyor ve hiçbiri güneş battıktan sonra oraya tekne götürmüyor."}</p>
+      <p>${STATE.lang==='en'
+        ?"The keeper's logbook is still on the desk, mid-sentence, as if he meant to come back. He never did. Finch's final expedition didn't end at his desk. It ended here, at the top of a spiral stair, in a lamp room that hasn't been lit in forty years."
+        :"Bekçinin günlüğü hâlâ masanın üzerinde, yarım kalmış bir cümlede, sanki geri dönmeyi planlıyormuş gibi. Hiç dönmedi. Finch'in son keşfi masasında bitmedi. Burada, sarmal bir merdivenin tepesinde, kırk yıldır yanmayan bir lamba odasında bitti."}</p>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('howto')">${STATE.lang==='en'?'Continue':'Devam Et'}</button></div>
+  </div>`;
+}
+function renderHowto(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'BEFORE YOU CLIMB THE STAIR':'MERDİVENİ TIRMANMADAN ÖNCE'}</p>
+    <h1 class="t">${STATE.lang==='en'?'How to Play':'Nasıl Oynanır'}</h1>
+    <div class="body"><p>${STATE.lang==='en'
+      ?'Solve the four puzzles in any order. Each gives you a single digit. Enter it and save it — the lighthouse remembers your answers as you explore. Use the hints only if truly stuck. When ready, check your code from the hub.'
+      :'Dört bilmeceyi istediğiniz sırada çözün. Her biri size tek bir rakam verecek. Girin ve kaydedin — deniz feneri keşfettikçe cevaplarınızı hatırlar. İpuçlarını yalnızca gerçekten takıldığınızda kullanın. Hazır olduğunuzda kodunuzu ana ekrandan kontrol edin.'}</p></div>
+    <div class="choices"><button class="btn wide" onclick="go('hub')">${L(T.toFile)}</button></div>
+  </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  let html = "";
+  if(STATE.screen==='cover') html = renderCover();
+  else if(STATE.screen==='gate') html = renderGate();
+  else if(STATE.screen==='story') html = renderStory();
+  else if(STATE.screen==='howto') html = renderHowto();
+  else if(STATE.screen==='hub') html = renderHub();
+  else if(STATE.screen==='checkresult') html = renderCheckResult();
+  else if(LOCATIONS[STATE.screen]) html = renderLocation(STATE.screen);
+  else if(PUZZLES[STATE.screen]) html = renderPuzzle(STATE.screen);
+  app.innerHTML = html;
+  document.getElementById('btnEN').classList.toggle('active',STATE.lang==='en');
+  document.getElementById('btnTR').classList.toggle('active',STATE.lang==='tr');
+  document.getElementById('brandLabel').innerHTML=L(T.brand)+'<span class="brand-sub" id="brandSub">'+L(T.brandSub)+'</span>';
+  document.getElementById('resetBtn').textContent=L(T.reset);
+  const pill = document.getElementById('progressPill');
+  if(pill) pill.textContent = STATE.visited.size + "/6";
+}
+function continueGate(){const el=document.getElementById('gateword');STATE.gateWord=el?(el.value||'').trim():'';saveState();go('story');}
+render();
+</script>
+</body>
+</html>
