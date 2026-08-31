@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Last Séance at Ravenscroft — Interactive Escape Room | EN + TR</title>
+<style>
+  :root{
+    --ink:#100c14; --ink2:#211523; --violet:#4d2749; --violet-light:#76406f;
+    --ghost:#8ed9c4; --gold:#c8a966; --rust:#7f1f31;
+    --paper:#eee3ce; --paper2:#dfd0b7; --text:#241820; --muted:#867889;
+    --shadow:0 18px 40px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:radial-gradient(circle at 50% -10%,#38243d 0%,var(--ink) 48%,#08070a 100%); color:var(--paper); font-family:Arial,'DejaVu Sans',sans-serif; min-height:100vh; }
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background-image:radial-gradient(circle,rgba(142,217,196,.28) 1px,transparent 1.5px);background-size:42px 42px;mask-image:linear-gradient(to bottom,black,transparent 75%);}
+  #app{max-width:900px; margin:0 auto; padding:0 16px 60px;}
+
+  .misthead{ position:relative; height:94px; overflow:hidden; margin-bottom:24px;
+    background:radial-gradient(circle at 50% 45%, rgba(142,217,196,.18) 0 31px, transparent 32px),linear-gradient(180deg,#271828 0%,var(--ink) 100%);
+    border-bottom:1px solid rgba(200,169,102,.45);
+  }
+  .mist{ position:absolute; top:0; bottom:0; width:220%; background:linear-gradient(90deg, transparent, rgba(143,217,196,.06) 20%, rgba(143,217,196,.1) 50%, rgba(143,217,196,.06) 80%, transparent);
+    animation:drift 14s linear infinite; }
+  @keyframes drift{ from{transform:translateX(-50%);} to{transform:translateX(0%);} }
+  .candleglow{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:90px; height:90px; border-radius:50%;
+    background:radial-gradient(circle, rgba(143,217,196,.5) 0%, transparent 70%); animation:flicker 3.4s ease-in-out infinite; }
+  @keyframes flicker{ 0%,100%{opacity:.7; transform:translate(-50%,-50%) scale(1);} 40%{opacity:1; transform:translate(-50%,-50%) scale(1.08);} 60%{opacity:.5; transform:translate(-50%,-50%) scale(.95);} }
+  .brand-text{font-family:Georgia,'DejaVu Serif',serif; font-weight:700; font-style:italic; font-size:22px; color:var(--gold); position:relative; z-index:1;letter-spacing:.6px;}
+  .misthead .row{ position:absolute; bottom:10px; left:50%; transform:translateX(-50%); width:100%; max-width:900px;
+    display:flex; align-items:center; justify-content:space-between; padding:0 16px; z-index:2; }
+  .topbar-right{display:flex; align-items:center; gap:10px;}
+  .lang-toggle{display:flex; border:1px solid var(--gold); border-radius:20px; overflow:hidden;}
+  .lang-toggle button{background:transparent; border:none; color:var(--muted); padding:5px 13px; font-family:Arial,sans-serif; font-weight:700; font-size:11.5px; cursor:pointer;}
+  .lang-toggle button.active{background:var(--ghost); color:#14101c;}
+  .progress-pill{ font-family:'Courier New',monospace; font-size:11px; color:var(--paper); border:1px solid var(--violet-light); background:rgba(74,47,107,.35); padding:5px 12px; border-radius:20px;}
+  .reset-btn{background:transparent;border:1px solid var(--violet-light);color:var(--paper);border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;}
+
+  .card{ background:linear-gradient(135deg,var(--paper),#f5ead5 55%,var(--paper2)); color:var(--text); border-radius:4px; padding:36px 32px 28px; box-shadow:var(--shadow),inset 0 0 0 5px rgba(127,31,49,.08); border:1px solid var(--gold); position:relative; animation:fadeUp .45s ease; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .eyebrow{ font-family:Arial,sans-serif; font-weight:700; font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--rust); margin:0 0 10px; }
+  h1.t{ font-family:Georgia,'DejaVu Serif',serif; font-weight:700; font-style:italic; font-size:clamp(24px,4vw,32px); color:#251624; margin:0 0 16px; line-height:1.2; }
+  h2.t{ font-family:Georgia,'DejaVu Serif',serif; font-weight:700; font-style:italic; font-size:22px; color:#251624; margin:0 0 12px; }
+  .body p{ font-family:Georgia,'DejaVu Serif',serif; font-size:17.5px; line-height:1.65; color:var(--text); margin:0 0 14px; }
+  .roomtag{ display:inline-block; font-family:Arial,sans-serif; font-weight:700; font-size:10.5px; letter-spacing:.08em; color:var(--paper); background:var(--violet); padding:5px 13px; border-radius:2px; margin-bottom:10px; }
+  .puzzlebox{ border:1.6px solid var(--violet); border-radius:5px; padding:18px 20px; margin:16px 0; background:rgba(223,208,183,.82); box-shadow:inset 0 0 22px rgba(77,39,73,.08); }
+  .puzzlebox .lbl{ font-family:Arial,sans-serif; font-weight:700; font-size:10px; color:var(--rust); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .spirit-index{margin-top:14px;padding:11px 13px;background:var(--ink2);color:var(--ghost);border:1px solid var(--gold);font-family:'Courier New',monospace;font-size:12px;letter-spacing:.08em;text-align:center;}
+  .whisper-reveal{margin-top:12px;padding:12px 14px;border-left:4px solid var(--ghost);background:rgba(142,217,196,.12);font-family:Georgia,serif;font-style:italic;font-weight:700;color:var(--violet);}
+  .answer-row{ display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .answer-row input{ width:52px; height:52px; text-align:center; font-family:Georgia,'DejaVu Serif',serif; font-weight:700; font-size:20px; border:2px solid var(--text); border-radius:5px; background:#fff; color:var(--text); }
+  .answer-row input.word{width:150px;text-transform:uppercase;letter-spacing:.18em;}
+  .btn{ background:var(--ink2); color:var(--paper); border:1px solid var(--gold); border-radius:4px; padding:11px 18px; font-family:Arial,sans-serif; font-weight:700; font-size:13.5px; cursor:pointer; transition:.15s; }
+  .btn:hover{ background:var(--violet); border-color:var(--violet-light); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.wide{ width:100%; }
+  .btn.ghost{ background:transparent; color:var(--violet); border:1px solid var(--violet); }
+  .feedback{ font-family:Arial,sans-serif; font-weight:700; font-size:13px; margin-top:10px; min-height:18px; }
+  .feedback.good{ color:#1f6b3a; }
+  .feedback.bad{ color:var(--rust); }
+  .hint-toggle{ margin-top:14px; }
+  .hint-body{ margin-top:10px; border:1.4px dashed var(--rust); border-radius:4px; padding:12px 14px; background:#e4dcc9; font-family:Arial,sans-serif; font-size:12.5px; color:#4a3a30; display:none; }
+  .hint-body.open{ display:block; }
+  .map-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:18px 0 8px; }
+  .room-card{ background:var(--ink2); border:1px solid var(--ghost); border-radius:5px; padding:16px 14px; text-align:center; cursor:pointer; transition:.15s; color:var(--paper); position:relative; }
+  .room-card:hover{ background:var(--violet); border-color:var(--violet-light); }
+  .room-card .check{ position:absolute; top:8px; right:10px; color:var(--ghost); font-size:14px; }
+  .room-card .name{ font-family:Arial,sans-serif; font-weight:700; font-size:12.5px; }
+  .dials{ display:flex; gap:14px; justify-content:center; margin:22px 0; }
+  .dial{ width:64px; height:64px; border:3px solid var(--text); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:Georgia,'DejaVu Serif',serif; font-weight:700; font-size:24px; background:#fff; color:var(--text); box-shadow:inset 0 0 0 4px rgba(200,169,102,.25); }
+  .dial.empty{ color:#bbb; }
+  .choices{ display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+  .stamp{ display:inline-block; border:3px double var(--rust); color:var(--rust); font-family:Georgia,'DejaVu Serif',serif; font-weight:700; font-style:italic; letter-spacing:.04em; padding:8px 18px; transform:rotate(-4deg); border-radius:50%; margin:8px 0 18px; font-size:16px; }
+  .omen{ font-family:Georgia,'DejaVu Serif',serif; font-style:italic; font-size:15.5px; line-height:1.5; margin:0 0 11px; padding-left:14px; border-left:2px solid var(--ghost); color:#2e2a38; }
+  @media (max-width:520px){ .card{padding:22px 18px 20px;} }
+  .card::before{
+    content:""; position:absolute; top:50%; left:50%; width:340px; height:340px;
+    transform:translate(-50%,-50%); border-radius:50%; border:3px solid #7f1f31;
+    opacity:.05; z-index:0; pointer-events:none;
+  }
+  .card::after{
+    content:""; position:absolute; top:50%; left:50%; width:260px; height:260px;
+    transform:translate(-50%,-50%); border-radius:50%; border:1px solid #4a2f6b;
+    opacity:.05; z-index:0; pointer-events:none;
+  }
+  .card > *{ position:relative; z-index:1; }
+</style>
+</head>
+<body>
+<div class="misthead">
+  <div class="mist"></div>
+  <div class="candleglow"></div>
+  <div class="row">
+    <div class="brand-text" id="brandLabel">Ravenscroft</div>
+    <div class="topbar-right">
+      <div class="progress-pill" id="progressPill">·</div>
+      <button class="reset-btn" id="resetBtn" onclick="resetGame()">RESET</button>
+      <div class="lang-toggle">
+        <button id="btnEN" class="active" onclick="setLang('en')">EN</button>
+        <button id="btnTR" onclick="setLang('tr')">TR</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+const T = {
+  brand:{en:"Ravenscroft", tr:"Ravenscroft"},
+  begin:{en:"Light the Candles", tr:"Mumları Yak"},
+  cont:{en:"Continue", tr:"Devam Et"},
+  toMap:{en:"See the House Map", tr:"Ev Haritasını Gör"},
+  toRooms:{en:"Enter the Manor", tr:"Malikaneye Gir"},
+  checkBtn:{en:"Check", tr:"Kontrol Et"},
+  correct:{en:"Correct! Digit locked in.", tr:"Doğru! Rakam kilitlendi."},
+  wrong:{en:"Not quite — look again.", tr:"Tam değil — tekrar bak."},
+  showHint:{en:"🔍 Show Hint", tr:"🔍 İpucunu Göster"},
+  hideHint:{en:"Hide Hint", tr:"İpucunu Gizle"},
+  toVault:{en:"Go to the Sealed Study", tr:"Mühürlü Odaya Git"},
+  needAll:{en:"Solve all four rooms first.", tr:"Önce dört odayı da çözün."},
+  enterCode:{en:"Turn the Dial", tr:"Kadranı Çevir"},
+  backHub:{en:"◂ Back to the Manor", tr:"◂ Malikaneye Dön"},
+  playAgain:{en:"Sit Again", tr:"Tekrar Otur"},
+  players:{en:"Sitters: 4–6 · Time: 45–75 min", tr:"Katılımcı: 4–6 · Süre: 45–75 dakika"},
+  reset:{en:"RESET",tr:"SIFIRLA"},
+  resetConfirm:{en:"Erase the circle's saved progress and begin again?",tr:"Çemberin kayıtlı ilerlemesi silinsin ve yeniden başlansın mı?"},
+  whisperFound:{en:"Eleanor whispers",tr:"Eleanor fısıldıyor"},
+  whisperWord:{en:"Whisper the four-letter word",tr:"Dört harfli kelimeyi fısılda"},
+};
+
+const ROOM_META = [
+  {key:"parlor", icon:"🕯", en:"Séance Parlor", tr:"Seans Salonu"},
+  {key:"library", icon:"📚", en:"The Library", tr:"Kütüphane"},
+  {key:"hallway", icon:"🖼", en:"Nursery Hallway", tr:"Çocuk Odası Koridoru"},
+  {key:"conservatory", icon:"🌙", en:"Conservatory", tr:"Limonluk"},
+];
+
+const ROOMS = {
+  parlor:{ lock:"NQ==", whisper:"SA==", title:{en:"The Planchette Speaks", tr:"Planşet Konuşuyor"},
+    flavor:{en:"The planchette sits cold under your fingertips. A rule, in Eleanor's own hand: number each letter A to Z, one to twenty-six. The planchette taps her answer, one number at a time.",
+            tr:"Planşet parmak uçlarınızın altında soğuk. Eleanor'ın el yazısıyla bir kural: alfabenin her harfini A'dan Z'ye, bir'den yirmi altıya numaralandırın. Planşet cevabını bir seferde bir sayı olarak vuruyor."},
+    puzzleLbl:{en:"The Planchette Taps", tr:"Planşetin Vuruşları"},
+    puzzleText:{en:"6 — 9 — 22 — 5. Match each number to its letter (A=1, B=2...) to spell a number word.", tr:"6 — 9 — 22 — 5. Bir sayı kelimesi oluşturmak için her sayıyı harfiyle eşleştirin (A=1, B=2...)."},
+    spiritIndex:{en:"SPIRIT INDEX · 3:M · 4:R · 5:H · 6:L",tr:"RUH DİZİNİ · 3:M · 4:R · 5:H · 6:L"},
+    hint:{en:"F is the 6th letter, I is the 9th. The word is FIVE.", tr:"F 6., I 9. harftir. Oluşan kelime FIVE, yani BEŞ."} },
+  library:{ lock:"OA==", whisper:"VQ==", title:{en:"The Wax-Marked Volumes", tr:"Mum İzli Ciltler"},
+    flavor:{en:"Five books bear fresh black wax on their spines, though the library has been locked for a century.",
+            tr:"Kütüphane bir yüzyıldır kilitli olmasına rağmen beş kitabın sırtında taze siyah mum izi var."},
+    puzzleLbl:{en:"The Marked Shelf", tr:"İşaretli Raf"},
+    puzzleText:{en:"Read the first letters of the marked titles: Eclipses, Inheritance, Graveyard, Hollow, Thirteen. What number word do they spell?", tr:"İşaretli kitap adlarının ilk harflerini okuyun: Eclipses, Inheritance, Graveyard, Hollow, Thirteen. Hangi İngilizce sayı kelimesi oluşuyor?"},
+    spiritIndex:{en:"SPIRIT INDEX · 6:A · 7:E · 8:U · 9:O",tr:"RUH DİZİNİ · 6:A · 7:E · 8:U · 9:O"},
+    hint:{en:"The initials are E-I-G-H-T.", tr:"Baş harfler E-I-G-H-T; İngilizce SEKİZ."} },
+  hallway:{ lock:"Nw==", whisper:"Uw==", title:{en:"The Watching Portraits", tr:"İzleyen Portreler"},
+    flavor:{en:"The hallway is lined with portraits nobody remembers commissioning.",
+            tr:"Koridor, kimsenin sipariş ettiğini hatırlamadığı portrelerle kaplı."},
+    puzzleLbl:{en:"Count the Eyes", tr:"Gözleri Sayın"},
+    puzzleText:{en:"12 portraits line the hall. A superstitious maid scratched the eyes out of 5 of them. How many can still see you?", tr:"Koridorda 12 portre var. Batıl inançlı bir hizmetçi 5'inin gözlerini kazımış. Kaçı hâlâ sizi görebiliyor?"},
+    spiritIndex:{en:"SPIRIT INDEX · 5:T · 6:N · 7:S · 8:C",tr:"RUH DİZİNİ · 5:T · 6:N · 7:S · 8:C"},
+    hint:{en:"Twelve portraits minus five blinded portraits leaves seven.", tr:"On iki portreden gözleri kazınmış beşi çıkarınca yedi kalır."} },
+  conservatory:{ lock:"OQ==", whisper:"SA==", title:{en:"The Midnight Blooms", tr:"Gece Yarısı Çiçekleri"},
+    flavor:{en:"Eleanor's moonflowers still bloom here, pale and fragrant, a century on.",
+            tr:"Eleanor'ın ay çiçekleri hâlâ burada açıyor, soluk ve kokulu, bir yüzyıl sonra."},
+    puzzleLbl:{en:"Count the Blooms", tr:"Çiçekleri Sayın"},
+    puzzleText:{en:"Three moonlit rows hold three open blooms each. The shadowed fourth row holds none. How many blooms are open?", tr:"Ay ışığındaki üç sırada üçer açık çiçek var. Gölgede kalan dördüncü sırada hiç yok. Kaç çiçek açık?"},
+    spiritIndex:{en:"SPIRIT INDEX · 7:P · 8:E · 9:H · 0:W",tr:"RUH DİZİNİ · 7:P · 8:E · 9:H · 0:W"},
+    hint:{en:"Three rows of three blooms make nine.", tr:"Üç sıra, her sırada üç çiçek: toplam dokuz."} }
+};
+const ROOM_ORDER = ["parlor","library","hallway","conservatory"];
+
+const STORAGE_KEY="ravenscroft-seance-progress-v2";
+function freshState(){return {lang:"en",screen:"cover",digits:{parlor:null,library:null,hallway:null,conservatory:null},hints:{}};}
+function loadState(){
+  try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY));const base=freshState();if(!saved||!["en","tr"].includes(saved.lang)||typeof saved.digits!=="object")return base;return {...base,...saved,digits:{...base.digits,...saved.digits},hints:{...saved.hints}};}catch(_){return freshState();}
+}
+let STATE=loadState();
+function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(STATE));}catch(_){}}
+function answerFor(key){return atob(ROOMS[key].lock);}
+function whisperFor(key){return atob(ROOMS[key].whisper);}
+function whisperWord(){return ROOM_ORDER.map(whisperFor).join("");}
+
+function L(obj){ return obj[STATE.lang]; }
+function setLang(l){
+  STATE.lang = l;
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnTR').classList.toggle('active', l==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  document.getElementById('resetBtn').textContent=L(T.reset);
+  saveState();
+  render();
+}
+function go(screen){ STATE.screen = screen; saveState(); window.scrollTo({top:0,behavior:'smooth'}); render(); }
+function allSolved(){ return Object.values(STATE.digits).every(d=>d!==null); }
+function codeString(){ return ROOM_ORDER.map(k=>STATE.digits[k]).join(""); }
+
+function checkDigit(key){
+  const input = document.getElementById('input_'+key);
+  const fb = document.getElementById('fb_'+key);
+  const val = (input.value||"").trim();
+  if(val === answerFor(key)){
+    STATE.digits[key] = val;
+    fb.textContent = L(T.correct); fb.className = "feedback good"; input.disabled = true;
+    saveState(); render();
+  } else {
+    fb.textContent = L(T.wrong); fb.className = "feedback bad";
+  }
+}
+function toggleHint(key){
+  STATE.hints[key] = !STATE.hints[key];
+  document.getElementById('hint_'+key).classList.toggle('open', STATE.hints[key]);
+  document.getElementById('hintbtn_'+key).textContent = STATE.hints[key] ? L(T.hideHint) : L(T.showHint);
+  saveState();
+}
+function checkVault(){
+  const boxes = ['v1','v2','v3','v4'].map(id=>document.getElementById(id).value.trim());
+  const word=(document.getElementById('spiritWord').value||"").trim().toUpperCase();
+  go(boxes.join("") === codeString() && word===whisperWord() ? 'peace' : 'continues');
+}
+function restartGame(){const lang=STATE.lang;STATE=freshState();STATE.lang=lang;saveState();render();window.scrollTo({top:0,behavior:'smooth'});}
+function resetGame(){if(confirm(L(T.resetConfirm))){localStorage.removeItem(STORAGE_KEY);STATE=freshState();setLang('en');}}
+function updateProgressPill(){
+  const pill = document.getElementById('progressPill');
+  if(pill) pill.textContent = Object.values(STATE.digits).filter(d=>d!==null).length + " / 4";
+}
+
+function renderCover(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'ELEANOR IS WAITING':'ELEANOR BEKLİYOR'}</p>
+    <h1 class="t">${STATE.lang==='en'?'The Last Séance at Ravenscroft':"Ravenscroft'ta Son Seans"}</h1>
+    <p style="font-family:'Courier New',monospace;color:var(--muted);font-size:12px;">${L(T.players)} · ${STATE.lang==='en'?'Ages 14+':'14+ yaş'}</p>
+    <div class="body"><p>${STATE.lang==='en'?'A haunted escape room for 4–6 sitters. One full moon. Four rooms. Four whispered letters. One spirit waiting to finally rest.':'4–6 kişilik hayaletli bir kaçış odası. Bir dolunay. Dört oda. Dört fısıltı harfi. Sonunda dinlenmeyi bekleyen bir ruh.'}</p></div>
+    <div class="choices"><button class="btn wide" onclick="go('legend')">${L(T.begin)}</button></div>
+  </div>`;
+}
+function renderLegend(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'THE LEGEND · 1897':'EFSANE · 1897'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Eleanor Ravenscroft':'Eleanor Ravenscroft'}</h2>
+    <div class="body">
+      <p>${STATE.lang==='en'
+        ?'In 1897, Eleanor Ravenscroft died in this house under circumstances the family never quite explained. Every year, on the night of the full moon closest to her death, those who sit quietly enough say they can still feel her — waiting for someone clever enough to finish what she started.'
+        :"1897'de Eleanor Ravenscroft, ailenin hiçbir zaman tam olarak açıklamadığı koşullar altında bu evde öldü. Her yıl, ölümüne en yakın dolunay gecesinde, yeterince sessiz oturanlar onu hâlâ hissedebildiklerini söyler — işini bitirecek kadar zeki birini bekleyen."}</p>
+      <div class="omen">${STATE.lang==='en'?'"Eleanor was left-handed. So, apparently, is whatever keeps moving the planchette."':'"Eleanor solaktı. Görünüşe göre, planşeti hareket ettiren şey de öyle."'}</div>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('map')">${L(T.toMap)}</button></div>
+  </div>`;
+}
+function renderMap(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'RAVENSCROFT MANOR':'RAVENSCROFT MALİKANESİ'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Four Rooms to Sit In':'Oturulacak Dört Oda'}</h2>
+    <div class="map-grid">
+      ${ROOM_META.map(r=>`<div class="room-card" onclick="go('${r.key}')">${STATE.digits[r.key]?'<span class="check">✓</span>':''}<div style="font-size:24px;">${r.icon}</div><div class="name">${r[STATE.lang]}</div></div>`).join("")}
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('vault')">${L(T.toVault)}</button></div>
+  </div>`;
+}
+function renderRoom(key){
+  const r = ROOMS[key];
+  const solved = STATE.digits[key] !== null;
+  return `<div class="card">
+    <span class="roomtag">${ROOM_META.find(m=>m.key===key)[STATE.lang]}</span>
+    <h2 class="t">${r.title[STATE.lang]}</h2>
+    <div class="body"><p>${r.flavor[STATE.lang]}</p></div>
+    <div class="puzzlebox">
+      <div class="lbl">${r.puzzleLbl[STATE.lang]}</div>
+      <p style="font-family:Georgia,'DejaVu Serif',serif; font-size:15.5px; margin:0;">${r.puzzleText[STATE.lang]}</p>
+      <div class="spirit-index">${r.spiritIndex[STATE.lang]}</div>
+    </div>
+    <div class="answer-row">
+      <input id="input_${key}" aria-label="${STATE.lang==='en'?'Room digit':'Oda rakamı'}" maxlength="1" inputmode="numeric" onkeydown="if(event.key==='Enter')checkDigit('${key}')" ${solved?'disabled value="'+STATE.digits[key]+'"':''} placeholder="?">
+      <button class="btn" onclick="checkDigit('${key}')" ${solved?'disabled':''}>${L(T.checkBtn)}</button>
+      <span class="feedback ${solved?'good':''}" id="fb_${key}">${solved?L(T.correct):''}</span>
+    </div>
+    ${solved?`<div class="whisper-reveal">${L(T.whisperFound)}: ${whisperFor(key)}</div>`:''}
+    <div class="hint-toggle">
+      <button class="btn ghost" id="hintbtn_${key}" onclick="toggleHint('${key}')">${STATE.hints[key]?L(T.hideHint):L(T.showHint)}</button>
+      <div class="hint-body ${STATE.hints[key]?'open':''}" id="hint_${key}">${r.hint[STATE.lang]}</div>
+    </div>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderVault(){
+  const ready = allSolved();
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'THE SEALED STUDY':'MÜHÜRLÜ ÇALIŞMA ODASI'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Numbers Open the Drawer. A Whisper Frees the Soul.':'Rakamlar Çekmeceyi Açar. Bir Fısıltı Ruhu Özgür Bırakır.'}</h2>
+    <div class="body"><p>${STATE.lang==='en'?'Enter the four room digits in manor order, then combine the four spirit letters and whisper the word Eleanor left behind.':'Dört oda rakamını malikâne sırasıyla girin; ardından dört ruh harfini birleştirip Eleanor\u2019ın geride bıraktığı kelimeyi fısıldayın.'}</p></div>
+    <div class="dials">${ROOM_ORDER.map(k=>`<div class="dial ${STATE.digits[k]?'':'empty'}">${STATE.digits[k]||'?'}</div>`).join("")}</div>
+    ${ready?`
+    <div class="answer-row" style="justify-content:center;">
+      <input id="v1" maxlength="1" inputmode="numeric" placeholder="?">
+      <input id="v2" maxlength="1" inputmode="numeric" placeholder="?">
+      <input id="v3" maxlength="1" inputmode="numeric" placeholder="?">
+      <input id="v4" maxlength="1" inputmode="numeric" placeholder="?">
+    </div>
+    <div class="answer-row" style="justify-content:center;"><input class="word" id="spiritWord" maxlength="4" autocomplete="off" placeholder="${STATE.lang==='en'?'WORD':'KELİME'}" aria-label="${L(T.whisperWord)}"></div>
+    <div class="choices"><button class="btn wide" onclick="checkVault()">${L(T.enterCode)}</button></div>`
+    : `<p style="text-align:center; font-family:Arial,sans-serif; font-weight:700; color:var(--muted);">${L(T.needAll)}</p>`}
+    <div class="choices"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderPeace(){
+  return `<div class="card">
+    <div class="stamp">${STATE.lang==='en'?'Peace at Last':'Sonunda Huzur'}</div>
+    <div class="body"><p>${STATE.lang==='en'
+      ?'You whisper HUSH. The drawer clicks open and a music box begins to play by itself. The candles burn suddenly bright and steady. Eleanor has finally been heard.'
+      :'HUSH diye fısıldarsınız. Çekmece tıkırdayarak açılır ve müzik kutusu kendiliğinden çalmaya başlar. Mumlar bir anda parlak ve sabit yanar. Eleanor sonunda duyulmuştur.'}</p></div>
+    <div class="choices"><button class="btn wide" onclick="restartGame()">${L(T.playAgain)}</button></div>
+  </div>`;
+}
+function renderContinues(){
+  return `<div class="card">
+    <div class="stamp" style="border-color:var(--muted); color:var(--muted);">${STATE.lang==='en'?'Not Yet':'Henüz Değil'}</div>
+    <div class="body"><p>${STATE.lang==='en'
+      ?"The drawer doesn't budge. The candles flicker, unimpressed. Check your numbers — Eleanor is patient, but not infinitely patient."
+      :"Çekmece kıpırdamıyor. Mumlar titriyor, etkilenmemiş. Rakamlarınızı kontrol edin — Eleanor sabırlı, ama sonsuza kadar değil."}</p></div>
+    <div class="choices">
+      <button class="btn wide" onclick="go('vault')">${STATE.lang==='en'?'Try Again':'Tekrar Dene'}</button>
+      <button class="btn ghost wide" onclick="restartGame()">${L(T.playAgain)}</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  let html = "";
+  if(STATE.screen==='cover') html = renderCover();
+  else if(STATE.screen==='legend') html = renderLegend();
+  else if(STATE.screen==='map') html = renderMap();
+  else if(ROOM_ORDER.includes(STATE.screen)) html = renderRoom(STATE.screen);
+  else if(STATE.screen==='vault') html = renderVault();
+  else if(STATE.screen==='peace') html = renderPeace();
+  else if(STATE.screen==='continues') html = renderContinues();
+  app.innerHTML = html;
+  document.getElementById('btnEN').classList.toggle('active',STATE.lang==='en');
+  document.getElementById('btnTR').classList.toggle('active',STATE.lang==='tr');
+  document.getElementById('brandLabel').textContent=L(T.brand);
+  document.getElementById('resetBtn').textContent=L(T.reset);
+  updateProgressPill();
+}
+render();
+</script>
+</body>
+</html>

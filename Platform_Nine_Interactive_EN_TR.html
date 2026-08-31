@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Vanishing at Platform Nine - Digital Case File</title>
+<style>
+  :root{
+    --ink:#17140f; --ink2:#211c14; --red:#8b2e2e; --red-light:#b34a3a;
+    --brass:#a68a4a; --brass-light:#c7ab6e; --paper:#e9ddc0; --paper2:#dcccA0;
+    --text:#241f16; --muted:#7a7060;
+    --shadow:0 18px 40px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--ink); color:var(--paper); font-family:Georgia,'Times New Roman',serif; min-height:100vh;
+    background-image:linear-gradient(rgba(10,10,10,.72),rgba(10,10,10,.92)),url('assets/platform-nine-cover.jpg');
+    background-size:cover;background-position:center;background-attachment:fixed; }
+  #app{max-width:940px; margin:0 auto; padding:0 16px 70px;}
+
+  .misthead{ position:relative; height:80px; overflow:hidden; margin-bottom:20px;
+    background:radial-gradient(ellipse at 50% 130%, #2a2418 0%, var(--ink) 75%);
+    border-bottom:1px solid rgba(166,138,74,.3);
+    background-image:repeating-linear-gradient(90deg, rgba(255,255,255,.02) 0 2px, transparent 2px 4px);
+  }
+  .brand-text{font-family:'Courier New',monospace; font-size:18px; font-weight:700; color:var(--brass-light); position:relative; z-index:1; letter-spacing:.02em;}
+  .misthead .row{ position:absolute; bottom:10px; left:50%; transform:translateX(-50%); width:100%; max-width:900px;
+    display:flex; align-items:center; justify-content:space-between; padding:0 16px; z-index:2; }
+  .topbar-right{display:flex; align-items:center; gap:10px;}
+  .lang-toggle{display:flex; border:1px solid var(--brass); border-radius:4px; overflow:hidden;}
+  .lang-toggle button{background:transparent; border:none; color:var(--paper2); padding:5px 13px; font-family:Arial,sans-serif; font-weight:700; font-size:11px; cursor:pointer; letter-spacing:.04em;}
+  .lang-toggle button.active{background:var(--brass); color:#17140f;}
+  .progress-pill{ font-family:Arial,sans-serif; font-weight:700; font-size:11px; color:var(--paper); border:1px solid var(--red-light); background:rgba(139,46,46,.45); padding:5px 12px; border-radius:4px;}
+
+  .card{ background:var(--paper); color:var(--text); border-radius:7px; padding:36px 34px 30px; box-shadow:0 24px 70px rgba(0,0,0,.7); border:1px solid var(--brass); border-top:7px solid var(--red); position:relative; animation:fadeUp .45s ease;
+    background-image:radial-gradient(circle at 18% 12%,rgba(255,255,255,.45),transparent 30%),linear-gradient(rgba(139,46,46,0) 98%,rgba(139,46,46,.15) 100%); }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .eyebrow{ font-family:Arial,sans-serif; font-weight:700; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--red); margin:0 0 10px; }
+  h1.t{ font-family:Georgia,'Times New Roman',serif; font-size:clamp(26px,5vw,40px); color:#1e1a13; margin:0 0 16px; line-height:1.18; }
+  h2.t{ font-family:Georgia,'Times New Roman',serif; font-size:26px; color:#1e1a13; margin:0 0 12px; }
+  .body p{ font-family:Georgia,'Times New Roman',serif; font-size:18px; line-height:1.65; color:var(--text); margin:0 0 14px; }
+  .roomtag{ display:inline-block; font-family:'Oswald'; font-weight:600; font-size:10.5px; letter-spacing:.06em; color:var(--paper); background:var(--red); padding:4px 12px; border-radius:2px; margin-bottom:10px; }
+  .puzzlebox{ border:1.6px solid var(--ink2); border-radius:2px; padding:18px 20px; margin:16px 0; background:var(--paper2); }
+  .puzzlebox .lbl{ font-family:'Oswald'; font-weight:600; font-size:10px; color:var(--red); text-transform:uppercase; letter-spacing:.07em; margin-bottom:8px; }
+  .evline{ font-family:'Oswald'; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:3px 0; }
+  .answer-row{ display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .answer-row input{ width:150px; height:46px; text-align:center; text-transform:uppercase; letter-spacing:.1em; font-family:'Special Elite',monospace; font-size:17px; border:2px solid var(--text); border-radius:3px; background:#fff; color:var(--text); }
+  .btn{ background:var(--ink2); color:var(--paper); border:1px solid var(--brass); border-radius:4px; padding:12px 18px; font-family:Arial,sans-serif; font-weight:700; font-size:13px; letter-spacing:.03em; cursor:pointer; transition:.15s; }
+  .btn:hover{ background:var(--red); border-color:var(--red-light); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.wide{ width:100%; }
+  .btn.ghost{ background:transparent; color:var(--red); border:1px solid var(--red); }
+  .feedback{ font-family:'Oswald'; font-weight:600; font-size:13px; margin-top:10px; min-height:18px; }
+  .feedback.good{ color:#1f6b3a; }
+  .feedback.bad{ color:var(--red); }
+  .hint-toggle{ margin-top:14px; }
+  .hint-body{ margin-top:10px; border:1.4px dashed var(--red); border-radius:3px; padding:12px 14px; background:#d9c9a0; font-family:'Oswald'; font-size:12.5px; color:#4a3a20; display:none; }
+  .hint-body.open{ display:block; }
+  .map-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:18px 0 8px; }
+  .room-card{ background:var(--ink2); border:1px solid var(--brass); border-radius:2px; padding:16px 10px; text-align:center; cursor:pointer; transition:.15s; color:var(--paper); position:relative; }
+  .room-card:hover{ background:var(--red); border-color:var(--red-light); }
+  .room-card .check{ position:absolute; top:8px; right:10px; color:var(--brass-light); font-size:14px; }
+  .room-card .name{ font-family:'Oswald'; font-weight:600; font-size:11px; margin-top:4px; letter-spacing:.02em; }
+  .mapbtns{ display:flex; gap:10px; margin-top:6px; }
+  .mapbtns .btn{ flex:1; }
+  .cardgrid{ display:flex; gap:10px; flex-wrap:wrap; margin:16px 0; }
+  .evcard{ flex:1; min-width:150px; border:1.6px solid var(--text); border-radius:3px; padding:10px 12px; background:#fff; font-family:'Oswald'; font-size:12px; }
+  .evcard .time{ font-family:'Special Elite',monospace; font-size:17px; color:var(--red); margin-bottom:4px; }
+  .tape-line{ font-family:'EB Garamond',serif; font-style:italic; font-size:15.5px; margin:6px 0; padding-left:10px; border-left:2px solid var(--brass); }
+  .tape-line b{ font-style:normal; color:var(--red); font-family:'Oswald'; }
+  .stamp{ display:inline-block; border:3px solid var(--red); color:var(--red); font-family:'Special Elite',monospace; letter-spacing:.04em; padding:8px 18px; transform:rotate(-4deg); border-radius:2px; margin:8px 0 18px; font-size:15px; }
+  .omen{ font-family:'EB Garamond',serif; font-style:italic; font-size:15.5px; line-height:1.5; margin:0 0 11px; padding-left:14px; border-left:2px solid var(--red); color:#2e2a20; }
+  .dossier-item{ border-bottom:1px solid var(--paper2); padding:14px 0; }
+  .dossier-item:last-child{ border-bottom:none; }
+  .dossier-item h3{ font-family:'Special Elite',monospace; margin:0 0 4px; font-size:16px; }
+  .dossier-item .role{ font-family:'Oswald'; font-weight:600; font-size:10.5px; color:var(--red); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;}
+  .dossier-item p{ font-family:'EB Garamond',serif; font-size:15.5px; margin:2px 0; color:var(--text); }
+  .accuse-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin:14px 0; }
+  .accuse-btn{ background:#fff; border:1.6px solid var(--text); border-radius:3px; padding:10px 6px; font-family:'Oswald'; font-weight:600; font-size:11.5px; text-align:center; cursor:pointer; }
+  .accuse-btn.sel{ background:var(--red); color:#fff; border-color:var(--red); }
+  @media (max-width:520px){ body{background-attachment:scroll;} .misthead{height:112px;} .misthead .row{align-items:flex-start;gap:12px;flex-direction:column;} .topbar-right{width:100%;justify-content:space-between;} .card{padding:24px 18px 22px;} .map-grid{grid-template-columns:repeat(2,1fr);} }
+  .card > *{ position:relative; z-index:1; }
+</style>
+</head>
+<body>
+<div class="misthead">
+  <div class="row">
+    <div class="brand-text" id="brandLabel">The Vanishing at Platform Nine</div>
+    <div class="topbar-right">
+      <div class="progress-pill" id="progressPill">·</div>
+      <div class="lang-toggle">
+        <button id="btnEN" class="active" onclick="setLang('en')">EN</button>
+        <button id="btnTR" onclick="setLang('tr')">TR</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+const T = {
+  brand:{en:"The Vanishing at Platform Nine", tr:"The Vanishing at Platform Nine"},
+  begin:{en:"Open the File", tr:"Dosyayı Aç"},
+  toMap:{en:"See the Station Map", tr:"İstasyon Haritasını Gör"},
+  backHub:{en:"◂ Back to the Station", tr:"◂ İstasyona Dön"},
+  checkBtn:{en:"Check", tr:"Kontrol Et"},
+  correct:{en:"Correct. Filed as evidence.", tr:"Doğru. Kanıt olarak dosyalandı."},
+  wrong:{en:"Doesn't match the record — look again.", tr:"Kayıtla uyuşmuyor — tekrar bak."},
+  showHint:{en:"🔍 Show Hint", tr:"🔍 İpucunu Göster"},
+  hideHint:{en:"Hide Hint", tr:"İpucunu Gizle"},
+  players:{en:"Investigators: 2–6 · Time: 45–60 min", tr:"Dedektif: 2–6 · Süre: 45–60 dakika"},
+  toDossier:{en:"Read the Dossiers", tr:"Dosyaları Oku"},
+  toCasefile:{en:"Open the Case File", tr:"Vaka Dosyasını Aç"},
+  needAll:{en:"Solve all three puzzles and open the locker first.", tr:"Önce üç bulmacayı da çöz ve dolabı aç."},
+  breakSeal:{en:"Break the Seal", tr:"Mührü Boz"},
+  playAgain:{en:"Reopen the File", tr:"Dosyayı Yeniden Aç"},
+  needCode:{en:"You need the number from Platform Nine's cassette first.", tr:"Önce Dokuzuncu Peron'daki kasetten sayıyı bulmalısın."},
+  enterCode:{en:"Enter Locker Code", tr:"Dolap Kodunu Gir"},
+  lockerOpen:{en:"✓ Locker 214 opened", tr:"✓ 214 numaralı dolap açıldı"},
+  accuseLbl:{en:"Who do you think was responsible?", tr:"Sence sorumlu kimdi?"},
+  solvedLbl:{en:"Puzzles solved:", tr:"Çözülen bulmacalar:"},
+};
+
+const ROOM_META = [
+  {key:"platform", icon:"🎙", en:"Platform Nine", tr:"Dokuzuncu Peron"},
+  {key:"cafe", icon:"☕", en:"Station Café", tr:"İstasyon Kafesi"},
+  {key:"carriage", icon:"🧳", en:"Carriage B", tr:"B Vagonu"},
+  {key:"lostprop", icon:"🔐", en:"Lost Property", tr:"Kayıp Eşya"},
+  {key:"signal", icon:"🚦", en:"Signal Cabin", tr:"Sinyal Kulübesi"},
+  {key:"newspaper", icon:"📰", en:"Newspaper Office", tr:"Gazete Ofisi"},
+];
+
+const DOSSIER = [
+  {name:"Martin Keel", role:{en:"Former Boyfriend",tr:"Eski Sevgili"},
+    motive:{en:"Recent breakup.",tr:"Yeni ayrılık."},
+    access:{en:"Says he was at a pub during the train journey — but witnesses there only remember him after 21:30.",tr:"Yolculuk boyunca barda olduğunu söylüyor — ama oradaki tanıklar onu ancak 21:30'dan sonra hatırlıyor."}},
+  {name:"Ruth Ames", role:{en:"Roommate",tr:"Ev Arkadaşı"},
+    motive:{en:"Knew Claire's plan.",tr:"Claire'in planını biliyordu."},
+    access:{en:"Claims she was at the university library — but the library's sign-out sheet has no entry for her that night.",tr:"Üniversite kütüphanesinde olduğunu söylüyor — ama kütüphanenin çıkış defterinde o gece için adı yok."}},
+  {name:"Gareth Lowe", role:{en:"Conductor",tr:"Kondüktör"},
+    motive:{en:"Had vestibule access.",tr:"Personel geçidine erişimi vardı."},
+    access:{en:"Says he was in Carriage A during the stop — the only crew member with a passkey to every door on the train.",tr:"Duruş sırasında A vagonunda olduğunu söylüyor — trendeki her kapıya geçiş anahtarı olan tek personel."}},
+  {name:"Helen Voss", role:{en:"Reporter",tr:"Muhabir"},
+    motive:{en:"Wanted Claire's evidence.",tr:"Claire'in kanıtlarını istiyordu."},
+    access:{en:"Claims she never met Claire that night. Her notebook is missing exactly one page — the one dated that day.",tr:"O gece Claire'le hiç görüşmediğini söylüyor. Defterinde tam olarak bir sayfa eksik — o güne ait olan."}},
+  {name:"Peter Rowan", role:{en:"Brother",tr:"Kardeş"},
+    motive:{en:"Opposed Claire leaving.",tr:"Claire'in gitmesine karşıydı."},
+    access:{en:"Says he was working a factory night shift. His card was punched at 21:00 and again at 6:00 — nothing in between is verified.",tr:"Fabrikada gece vardiyasında olduğunu söylüyor. Kartı 21:00'de ve tekrar 06:00'da basılmış — arada hiçbir şey doğrulanmadı."}},
+];
+
+let STATE = { lang:"en", screen:"cover", solved:{timeline:null, cassette:null, exit:null}, hints:{}, lockerOpen:false, accuse:null };
+
+function L(obj){ return obj[STATE.lang]; }
+function setLang(l){
+  STATE.lang = l;
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnTR').classList.toggle('active', l==='tr');
+  document.getElementById('brandLabel').textContent = L(T.brand);
+  render();
+}
+function go(screen){ STATE.screen = screen; window.scrollTo({top:0,behavior:'smooth'}); render(); }
+function norm(s){ return (s||"").trim().toUpperCase().replace(/[^A-Z0-9ÇĞİÖŞÜ]/g,""); }
+function solvedCount(){ return Object.values(STATE.solved).filter(v=>v!==null).length; }
+function allSolved(){ return solvedCount()===3 && STATE.lockerOpen; }
+
+function checkAnswer(key, correct, inputId, fbId){
+  const val = norm(document.getElementById(inputId).value);
+  const fb = document.getElementById(fbId);
+  const ok = correct.includes(val);
+  if(ok){
+    STATE.solved[key] = val;
+    fb.textContent = L(T.correct); fb.className = "feedback good";
+    document.getElementById(inputId).disabled = true;
+    render();
+  } else {
+    fb.textContent = L(T.wrong); fb.className = "feedback bad";
+  }
+}
+function toggleHint(key){
+  STATE.hints[key] = !STATE.hints[key];
+  document.getElementById('hint_'+key).classList.toggle('open', STATE.hints[key]);
+  document.getElementById('hintbtn_'+key).textContent = STATE.hints[key] ? L(T.hideHint) : L(T.showHint);
+}
+function checkLocker(){
+  const val = norm(document.getElementById('lockerInput').value);
+  const fb = document.getElementById('lockerFb');
+  if(val === "214"){ STATE.lockerOpen = true; render(); }
+  else { fb.textContent = L(T.wrong); fb.className = "feedback bad"; }
+}
+function pickAccuse(name){ STATE.accuse = name; render(); }
+function updateProgressPill(){
+  const pill = document.getElementById('progressPill');
+  if(pill) pill.textContent = solvedCount() + " / 3";
+}
+
+function renderCover(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'MANCHESTER · 1986 · FILE REOPENED':'MANCHESTER · 1986 · DOSYA YENİDEN AÇILDI'}</p>
+    <h1 class="t">The Vanishing at Platform Nine</h1>
+    <div class="body"><p>${STATE.lang==='en'?'A 1980s missing-person cold case. Forty years buried. Reopen the file and find out what really happened during four unaccounted-for minutes.':'1980’ler kayıp kişi soğuk dosyası. Kırk yıldır gömülü. Dosyayı yeniden aç ve hesapsız dört dakikada gerçekte ne olduğunu bul.'}</p>
+    <p style="font-family:'Oswald'; font-weight:600; font-size:13px; color:var(--muted);">${L(T.players)}</p></div>
+    <div class="choices"><button class="btn wide" onclick="go('brief')">${L(T.begin)}</button></div>
+  </div>`;
+}
+function renderBrief(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'MISSION BRIEF':'GÖREV ÖZETİ'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Four Minutes, Unaccounted For':'Hesapsız Dört Dakika'}</h2>
+    <div class="body">
+      <p>${STATE.lang==='en'
+        ?'Student Claire Rowan boards the 21:18 train from Manchester Victoria. Her suitcase reaches Leeds. Claire does not.'
+        :'Öğrenci Claire Rowan, 21:18’de Manchester Victoria’dan kalkan trene biner. Bavulu Leeds’e ulaşır. Claire ulaşmaz.'}</p>
+      <p>${STATE.lang==='en'
+        ?'The original inquiry says she left voluntarily. Forty years later, a cassette, a signal log and a reporter’s notebook surface together.'
+        :'İlk soruşturma onun kendi isteğiyle gittiğini söyler. Kırk yıl sonra bir kaset, bir sinyal kaydı ve bir muhabir defteri birlikte ortaya çıkar.'}</p>
+      <div class="omen">${STATE.lang==='en'?'Reconstruct Claire’s final hour and determine what happened during a four-minute unscheduled stop. Search every location — some clues only make sense once compared with another.':'Claire’in son saatini yeniden kurun ve dört dakikalık plansız duruşta ne olduğunu bulun. Her mekânı arayın — bazı ipuçları yalnızca bir başkasıyla karşılaştırıldığında anlam kazanır.'}</div>
+    </div>
+    <div class="choices"><button class="btn wide" onclick="go('map')">${L(T.toMap)}</button></div>
+  </div>`;
+}
+function renderMap(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'MANCHESTER VICTORIA · 21:18':'MANCHESTER VICTORIA · 21:18'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Six Places to Search':'Aranacak Altı Yer'}</h2>
+    <div class="map-grid">
+      ${ROOM_META.map(r=>{
+        let solved=false;
+        if(r.key==='newspaper') solved = STATE.solved.timeline!==null;
+        else if(r.key==='platform') solved = STATE.solved.cassette!==null;
+        else if(r.key==='signal') solved = STATE.solved.exit!==null;
+        else if(r.key==='lostprop') solved = STATE.lockerOpen;
+        return `<div class="room-card" onclick="go('${r.key}')">${solved?'<span class="check">✓</span>':''}<div style="font-size:22px;">${r.icon}</div><div class="name">${r[STATE.lang]}</div></div>`;
+      }).join("")}
+    </div>
+    <div class="mapbtns">
+      <button class="btn ghost" onclick="go('dossier')">${L(T.toDossier)}</button>
+      <button class="btn" onclick="go('casefile')">${L(T.toCasefile)}</button>
+    </div>
+  </div>`;
+}
+
+function renderPlatform(){
+  const solved = STATE.solved.cassette !== null;
+  return `<div class="card">
+    <span class="roomtag">${ROOM_META.find(m=>m.key==='platform')[STATE.lang]}</span>
+    <h2 class="t">${STATE.lang==='en'?'The Cassette in the Bin':'Çöpteki Kaset'}</h2>
+    <div class="body"><p>${STATE.lang==='en'?'A porter remembers Claire carrying a cassette recorder that evening. Her return ticket, unused, was found tucked in a timetable rack. She appeared to be waiting for someone.':'Bir hamal, o akşam Claire’in bir kasetçalar taşıdığını hatırlıyor. Kullanılmamış dönüş bileti bir tarife rafına sıkıştırılmış halde bulundu. Birini bekliyor gibiydi.'}</p></div>
+    <div class="body"><p>${STATE.lang==='en'?'An unmarked cassette turns up in lost property, wound halfway through. Mostly hiss and platform noise — but four fragments survive:':'Kayıp eşyada, yarısına kadar sarılmış, üzerinde isim olmayan bir kaset bulunuyor. Çoğunlukla cızırtı ve peron gürültüsü — ama dört parça hayatta kalmış:'}</p></div>
+    <div class="tape-line">"${STATE.lang==='en'?'<b>Locker</b> room voices are always too loud this time of night.':'<b>Dolap</b> odası sesleri gecenin bu saatinde hep çok yüksek çıkar.'}"</div>
+    <div class="tape-line">"${STATE.lang==='en'?'<b>Two</b> coffees, and only one of us drank hers.':'<b>İki</b> kahve, ve ikimizden yalnızca biri içti.'}"</div>
+    <div class="tape-line">"${STATE.lang==='en'?'<b>One</b> more stop before Leeds, that’s all I need.':'<b>Bir</b> durak daha Leeds’ten önce, tek ihtiyacım bu.'}"</div>
+    <div class="tape-line">"${STATE.lang==='en'?'<b>Four</b> minutes isn’t long, but it might be enough.':'<b>Dört</b> dakika uzun değil, ama yeterli olabilir.'}"</div>
+    <div class="puzzlebox" style="margin-top:16px;">
+      <div class="lbl">${STATE.lang==='en'?'Read Only the First Word of Each Line':'Sadece Her Satırın İlk Kelimesini Oku'}</div>
+      <p style="margin:0; font-size:15px;">${STATE.lang==='en'?'Those four words aren’t a sentence. They’re a number. Type it below.':'Bu dört kelime bir cümle değil. Bir sayı. Aşağıya yaz.'}</p>
+    </div>
+    <div class="answer-row">
+      <input id="input_cassette" maxlength="4" ${solved?'disabled value="214"':''} placeholder="?">
+      <button class="btn" onclick="checkAnswer('cassette', ['214'], 'input_cassette', 'fb_cassette')" ${solved?'disabled':''}>${L(T.checkBtn)}</button>
+      <span class="feedback ${solved?'good':''}" id="fb_cassette">${solved?L(T.correct):''}</span>
+    </div>
+    <div class="hint-toggle">
+      <button class="btn ghost" id="hintbtn_cassette" onclick="toggleHint('cassette')">${STATE.hints.cassette?L(T.hideHint):L(T.showHint)}</button>
+      <div class="hint-body ${STATE.hints.cassette?'open':''}" id="hint_cassette">${STATE.lang==='en'?'Locker... two... one... four. Read it as digits, not words.':'Dolap... iki... bir... dört. Kelime değil, rakam olarak oku.'}</div>
+    </div>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderCafe(){
+  return `<div class="card">
+    <span class="roomtag">${ROOM_META.find(m=>m.key==='cafe')[STATE.lang]}</span>
+    <h2 class="t">${STATE.lang==='en'?'Receipt 441':'441 Numaralı Fiş'}</h2>
+    <div class="body"><p>${STATE.lang==='en'?'A receipt, still in the till roll, timestamps two coffees at 21:08 — ten minutes before Claire’s train left. The second customer wore a press badge, half-hidden under a coat.':'Kasa rulosunda hâlâ duran bir fiş, 21:08’de iki kahveyi damgalamış — Claire’in treninin kalkmasından on dakika önce. İkinci müşteri, ceketinin altında yarı gizli bir basın kartı taşıyordu.'}</p></div>
+    <div class="cardgrid">
+      <div class="evcard"><div class="time">21:08</div>${STATE.lang==='en'?'Two coffees ordered. One paid for, one left unfinished.':'İki kahve sipariş edildi. Biri ödendi, biri yarım bırakıldı.'}</div>
+      <div class="evcard"><div class="time">21:18</div>${STATE.lang==='en'?'Claire’s train departs — exactly ten minutes later.':'Claire’in treni kalkıyor — tam on dakika sonra.'}</div>
+    </div>
+    <div class="puzzlebox"><div class="lbl">${STATE.lang==='en'?'Investigator Note':'Dedektif Notu'}</div><p style="margin:0;">${STATE.lang==='en'?'Who else was in this café at 21:08? Keep this receipt in mind when you reach the Newspaper Office.':'21:08’de bu kafede başka kim vardı? Gazete Ofisi’ne vardığında bu fişi aklında tut.'}</p></div>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderCarriage(){
+  return `<div class="card">
+    <span class="roomtag">${ROOM_META.find(m=>m.key==='carriage')[STATE.lang]}</span>
+    <h2 class="t">${STATE.lang==='en'?'The Suitcase Above Seat 18':'18 Numaralı Koltuğun Üstündeki Bavul'}</h2>
+    <div class="body"><p>${STATE.lang==='en'?'Claire’s suitcase is found still in the luggage rack above seat 18, undisturbed. A thread of red fiber is caught on the latch of the rear staff vestibule.':'Claire’in bavulu, 18 numaralı koltuğun üstündeki bagaj rafında, dokunulmamış halde bulunuyor. Arka personel geçidinin mandalına kırmızı bir lif takılmış.'}</p></div>
+    <div class="puzzlebox"><div class="lbl">${STATE.lang==='en'?'Carriage Plan':'Vagon Planı'}</div>
+    <p style="margin:0;">${STATE.lang==='en'?'Passenger doors lock automatically between stations. The only interior route that bypasses them is the rear staff vestibule — used by the conductor to move between carriages.':'Yolcu kapıları istasyonlar arasında otomatik olarak kilitlenir. Onları atlayan tek iç yol, kondüktörün vagonlar arasında geçmek için kullandığı arka personel geçididir.'}</p></div>
+    <p style="font-family:'Oswald'; font-size:11px; color:var(--muted);">${STATE.lang==='en'?'Take this plan with you to the Signal Cabin.':'Bu planı Sinyal Kulübesi’ne götür.'}</p>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderSignal(){
+  const solved = STATE.solved.exit !== null;
+  return `<div class="card">
+    <span class="roomtag">${ROOM_META.find(m=>m.key==='signal')[STATE.lang]}</span>
+    <h2 class="t">${STATE.lang==='en'?'Signal M17':'M17 Sinyali'}</h2>
+    <div class="body"><p>${STATE.lang==='en'?'The train stops at signal M17 from 21:31 to 21:35 — four unscheduled minutes. The inspection log afterward found no real fault with the track or signal.':'Tren M17 sinyalinde 21:31’den 21:35’e kadar duruyor — dört plansız dakika. Sonraki inceleme kayıtlarında rayda veya sinyalde gerçek bir arıza bulunamıyor.'}</p></div>
+    <div class="puzzlebox"><div class="lbl">${STATE.lang==='en'?'Signal Log':'Sinyal Kaydı'}</div>
+    <p style="margin:0;">${STATE.lang==='en'?'21:31 — halted at M17. 21:33 — brief loss of visual contact with Carriage B from the platform-side camera. 21:35 — train resumes, on schedule from that point.':'21:31 — M17’de durdu. 21:33 — peron tarafı kamerasından B Vagonu ile görsel temas kısa süreliğine kesildi. 21:35 — tren, o noktadan itibaren tarifeye uygun şekilde tekrar hareket etti.'}</p></div>
+    <div class="puzzlebox">
+      <div class="lbl">${STATE.lang==='en'?'The Only Exit':'Tek Çıkış'}</div>
+      <p style="margin:0;">${STATE.lang==='en'?'Remember the Carriage Plan: passenger doors were locked. If someone left the train during those four unseen minutes, which route did they have to use? Type your answer.':'Vagon Planı’nı hatırla: yolcu kapıları kilitliydi. Biri o görülmeyen dört dakika içinde trenden ayrıldıysa, hangi yolu kullanmak zorundaydı? Cevabını yaz.'}</p>
+    </div>
+    <div class="answer-row">
+      <input id="input_exit" maxlength="20" ${solved?'disabled value="VESTIBULE"':''} placeholder="?">
+      <button class="btn" onclick="checkAnswer('exit', ['VESTIBULE','STAFFVESTIBULE','THESTAFFVESTIBULE','REARSTAFFVESTIBULE','PERSONELGEÇIDI','ARKAPERSONELGEÇIDI','PERSONELKAPISI'], 'input_exit', 'fb_exit')" ${solved?'disabled':''}>${L(T.checkBtn)}</button>
+      <span class="feedback ${solved?'good':''}" id="fb_exit">${solved?L(T.correct):''}</span>
+    </div>
+    <div class="hint-toggle">
+      <button class="btn ghost" id="hintbtn_exit" onclick="toggleHint('exit')">${STATE.hints.exit?L(T.hideHint):L(T.showHint)}</button>
+      <div class="hint-body ${STATE.hints.exit?'open':''}" id="hint_exit">${STATE.lang==='en'?'Every passenger door was locked. Only one door in the whole train never was.':'Her yolcu kapısı kilitliydi. Trendeki sadece bir kapı hiç kilitlenmedi.'}</div>
+    </div>
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderNewspaper(){
+  const solved = STATE.solved.timeline !== null;
+  const events = [
+    {letter:'A', time:'21:08', en:'Receipt 441: two coffees, station café.', tr:'441 numaralı fiş: istasyon kafesinde iki kahve.'},
+    {letter:'B', time:'20:52', en:'Incoming call to the newsroom, no name given.', tr:'Haber merkezine gelen bir arama, isim verilmedi.'},
+    {letter:'C', time:'21:18', en:'The 21:18 departs Manchester Victoria, on time.', tr:'21:18 treni Manchester Victoria’dan zamanında kalkıyor.'},
+    {letter:'D', time:'21:31', en:'Unscheduled stop begins at signal M17.', tr:'M17 sinyalinde plansız duruş başlıyor.'},
+  ];
+  return `<div class="card">
+    <span class="roomtag">${ROOM_META.find(m=>m.key==='newspaper')[STATE.lang]}</span>
+    <h2 class="t">${STATE.lang==='en'?'The Missing Page':'Eksik Sayfa'}</h2>
+    <div class="body"><p>${STATE.lang==='en'?'Claire called reporter Helen Voss at the newsroom at 20:52. Voss’s notebook still sits in the archive — missing exactly one page, torn cleanly from the spine.':'Claire, haber merkezindeki muhabir Helen Voss’u 20:52’de aradı. Voss’un defteri hâlâ arşivde duruyor — ciltten temizce koparılmış tam olarak bir sayfa eksik.'}</p></div>
+    <div class="cardgrid">${events.map(e=>`<div class="evcard"><div class="time">${e.letter}</div>${e[STATE.lang]}</div>`).join("")}</div>
+    <div class="puzzlebox">
+      <div class="lbl">${STATE.lang==='en'?'The Final Hour':'Son Saat'}</div>
+      <p style="margin:0;">${STATE.lang==='en'?'Arrange events A–D in the order they happened, then type the four letters in that order (e.g. ABCD).':'A-D olaylarını gerçekleştikleri sırayla dizin, sonra dört harfi o sırayla yazın (örn. ABCD).'}</p>
+    </div>
+    <div class="answer-row">
+      <input id="input_timeline" maxlength="4" ${solved?'disabled value="BACD"':''} placeholder="?">
+      <button class="btn" onclick="checkAnswer('timeline', ['BACD'], 'input_timeline', 'fb_timeline')" ${solved?'disabled':''}>${L(T.checkBtn)}</button>
+      <span class="feedback ${solved?'good':''}" id="fb_timeline">${solved?L(T.correct):''}</span>
+    </div>
+    <div class="hint-toggle">
+      <button class="btn ghost" id="hintbtn_timeline" onclick="toggleHint('timeline')">${STATE.hints.timeline?L(T.hideHint):L(T.showHint)}</button>
+      <div class="hint-body ${STATE.hints.timeline?'open':''}" id="hint_timeline">${STATE.lang==='en'?'20:52 comes first, 21:31 comes last. Sort the times, then read off the letters.':'20:52 önce gelir, 21:31 en son. Saatleri sırala, sonra harfleri oku.'}</div>
+    </div>
+    ${solved ? `<div class="puzzlebox" style="margin-top:16px; background:#fff;"><p style="margin:0; font-style:italic;">${STATE.lang==='en'?'Whoever had coffee with Claire at 21:08 — ten minutes before she boarded — was the last person seen with her. Voss says she never met Claire that night. The timeline says otherwise.':'21:08’de Claire ile kahve içen kişi — bindiğinden on dakika önce — onunla görülen son kişiydi. Voss o gece Claire ile hiç görüşmediğini söylüyor. Zaman çizelgesi başka şey diyor.'}</p></div>` : ''}
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderLostProperty(){
+  const codeKnown = STATE.solved.cassette !== null;
+  return `<div class="card">
+    <span class="roomtag">${ROOM_META.find(m=>m.key==='lostprop')[STATE.lang]}</span>
+    <h2 class="t">${STATE.lang==='en'?'Locker 214':'214 Numaralı Dolap'}</h2>
+    <div class="body"><p>${STATE.lang==='en'?'A locker key was turned in two days after Claire vanished, found in a waiting-room bin. Nobody ever claimed it — until now.':'Claire kaybolduktan iki gün sonra, bekleme salonundaki bir çöp kutusunda bulunan bir dolap anahtarı teslim edildi. Şimdiye kadar hiç kimse sahiplenmedi.'}</p></div>
+    ${!codeKnown ? `<div class="puzzlebox"><p style="margin:0;">${L(T.needCode)}</p></div>` : `
+    <div class="puzzlebox">
+      <div class="lbl">${L(T.enterCode)}</div>
+      ${!STATE.lockerOpen ? `<div class="answer-row"><input id="lockerInput" maxlength="3" placeholder="___"><button class="btn" onclick="checkLocker()">${L(T.checkBtn)}</button><span class="feedback" id="lockerFb"></span></div>`
+      : `<p style="font-family:'Oswald'; font-weight:600; color:#1f6b3a; margin:0 0 10px;">${L(T.lockerOpen)}</p>
+         <p style="margin:0;">${STATE.lang==='en'?'Inside: a photocopied passport in Claire’s name, and a folder of newspaper clippings on council bribery allegations — byline, Helen Voss.':'İçinde: Claire’in adına bir fotokopi pasaport ve belediye rüşveti iddialarıyla ilgili haber kupürlerinden oluşan bir dosya — imza, Helen Voss.'}</p>`}
+    </div>`}
+    <div class="choices" style="margin-top:20px;"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderDossier(){
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'FIVE PEOPLE OF INTEREST':'İLGİLENİLEN BEŞ KİŞİ'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Who Was Really on That Train?':'O Trende Gerçekten Kim Vardı?'}</h2>
+    ${DOSSIER.map(d=>`<div class="dossier-item">
+      <h3>${d.name}</h3>
+      <div class="role">${d.role[STATE.lang]}</div>
+      <p><b>${STATE.lang==='en'?'Motive/Connection:':'Bağlantı/Motif:'}</b> ${d.motive[STATE.lang]}</p>
+      <p><b>${STATE.lang==='en'?'Alibi/Access:':'Alibi/Erişim:'}</b> ${d.access[STATE.lang]}</p>
+    </div>`).join("")}
+    <div class="choices" style="margin-top:16px;"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderCasefile(){
+  const ready = allSolved();
+  return `<div class="card">
+    <p class="eyebrow">${STATE.lang==='en'?'COMMIT BEFORE OPENING':'AÇMADAN ÖNCE KARAR VER'}</p>
+    <h2 class="t">${STATE.lang==='en'?'Final Theory':'Son Teori'}</h2>
+    <p style="font-family:'Oswald'; font-weight:600; font-size:12px; color:var(--muted);">${L(T.solvedLbl)} ${solvedCount()} / 3 &nbsp;·&nbsp; ${STATE.lockerOpen ? (STATE.lang==='en'?'Locker: opened':'Dolap: açıldı') : (STATE.lang==='en'?'Locker: sealed':'Dolap: mühürlü')}</p>
+    ${ready ? `
+    <p style="font-family:'Oswald'; font-weight:600; font-size:13px;">${L(T.accuseLbl)}</p>
+    <div class="accuse-grid">${DOSSIER.map(d=>`<div class="accuse-btn ${STATE.accuse===d.name?'sel':''}" onclick="pickAccuse('${d.name}')">${d.name}</div>`).join("")}</div>
+    <div class="choices"><button class="btn wide" onclick="go('solution')">${L(T.breakSeal)}</button></div>`
+    : `<p style="text-align:center; font-family:'Oswald'; font-weight:600; color:var(--muted);">${L(T.needAll)}</p>`}
+    <div class="choices" style="margin-top:12px;"><button class="btn ghost wide" onclick="go('map')">${L(T.backHub)}</button></div>
+  </div>`;
+}
+function renderSolution(){
+  return `<div class="card">
+    <div class="stamp">${STATE.lang==='en'?'Case Closed — Missing, Not Murdered':'Dosya Kapandı — Kayıp, Öldürülmedi'}</div>
+    ${STATE.accuse ? `<p style="font-family:'Oswald'; font-size:12px; color:var(--muted);">${STATE.lang==='en'?'Your theory named:':'Senin teorin şuydu:'} <b>${STATE.accuse}</b></p>` : ''}
+    <div class="body"><p>${STATE.lang==='en'
+      ?'Claire planned to hand her evidence — the copied passport and the bribery clippings — to Helen Voss. Voss met her at the café at 21:08, then boarded the same train separately.'
+      :'Claire, elindeki kanıtları — kopya pasaportu ve rüşvet kupürlerini — Helen Voss’a vermeyi planlamıştı. Voss onunla 21:08’de kafede buluştu, sonra aynı trene ayrı bindi.'}</p>
+    <p>${STATE.lang==='en'
+      ?'When Claire refused to surrender the original documents at the last moment, Voss used a false signal fault to force an unscheduled stop, then pushed Claire off through the one door with no working lock: the rear staff vestibule.'
+      :'Claire son anda orijinal belgeleri vermeyi reddedince, Voss sahte bir sinyal arızası kullanarak plansız bir duruş yaptırdı, sonra Claire’i çalışan kilidi olmayan tek kapıdan — arka personel geçidinden — dışarı itti.'}</p>
+    <p>${STATE.lang==='en'
+      ?'Claire survived the fall. Fearing what Voss and the men behind the bribery scandal would do next, she disappeared into protective custody rather than come forward — and stayed hidden for forty years.'
+      :"Claire düşmeden sağ kurtuldu. Voss'un ve rüşvet skandalının arkasındakilerin bir sonraki adımından korkarak, ortaya çıkmak yerine koruma programına girip kayboldu — ve kırk yıl boyunca saklı kaldı."}</p></div>
+    <div class="choices"><button class="btn wide" onclick="location.reload()">${L(T.playAgain)}</button></div>
+  </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  let html = "";
+  if(STATE.screen==='cover') html = renderCover();
+  else if(STATE.screen==='brief') html = renderBrief();
+  else if(STATE.screen==='map') html = renderMap();
+  else if(STATE.screen==='platform') html = renderPlatform();
+  else if(STATE.screen==='cafe') html = renderCafe();
+  else if(STATE.screen==='carriage') html = renderCarriage();
+  else if(STATE.screen==='signal') html = renderSignal();
+  else if(STATE.screen==='newspaper') html = renderNewspaper();
+  else if(STATE.screen==='lostprop') html = renderLostProperty();
+  else if(STATE.screen==='dossier') html = renderDossier();
+  else if(STATE.screen==='casefile') html = renderCasefile();
+  else if(STATE.screen==='solution') html = renderSolution();
+  app.innerHTML = html;
+  updateProgressPill();
+}
+render();
+</script>
+</body>
+</html>
